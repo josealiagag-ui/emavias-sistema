@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMAVIAS - Cotizaciones Externos</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+/* ---- Print ---- */
+@media print { body > *{display:none!important;} #printArea{display:block!important;} }
+body.printing > *{display:none!important;}
+body.printing #printArea{display:block!important;}
+#printArea{display:none;}
+
+/* ---- Print form styles ---- */
+.pw{font-family:Arial,sans-serif;font-size:9.5pt;color:#000;width:190mm;margin:0 auto;padding:6mm;}
+.pw table{width:100%;border-collapse:collapse;}
+.pw td,.pw th{border:1px solid #000;padding:3px 5px;vertical-align:middle;}
+.pw .section-title{background:#c0392b;color:#fff;text-align:center;font-weight:bold;font-size:9.5pt;padding:4px;}
+.pw .label-cell{font-weight:bold;background:#f5f5f5;}
+.pw .pw-logo-ema{font-size:26pt;font-weight:900;color:#c0392b;letter-spacing:-2px;}
+.pw .pw-logo-vias{font-size:26pt;font-weight:900;color:#000;letter-spacing:-2px;}
+.pw .items-th{background:#e0e0e0;font-weight:bold;text-align:center;font-size:8.5pt;}
+.pw .total-row td{font-weight:bold;background:#f5f5f5;}
+.pw .sign-area{margin-top:16mm;display:flex;justify-content:space-around;}
+.pw .sign-block{text-align:center;width:38%;}
+.pw .sign-line{border-top:1px solid #000;margin-top:20mm;padding-top:3px;font-size:8pt;font-weight:bold;text-transform:uppercase;}
+.pw .obs-cell{font-size:7.8pt;line-height:1.35;}
+
+/* ---- Items form table ---- */
+.items-form-table{width:100%;border-collapse:collapse;margin-top:6px;}
+.items-form-table th{background:#f0f0f0;color:#2c3e50;font-size:11px;font-weight:600;padding:6px 8px;text-align:left;border-bottom:2px solid #ddd;}
+.items-form-table td{padding:4px 5px;border-bottom:1px solid #eee;vertical-align:middle;}
+.items-form-table select,.items-form-table input{width:100%;font-size:12px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;box-sizing:border-box;}
+.items-form-table .col-n{width:34px;text-align:center;color:#888;font-size:12px;}
+.items-form-table .col-item{min-width:340px;width:40%;}
+.items-form-table .col-unid{width:70px;}
+.items-form-table .col-cant{width:90px;}
+.items-form-table .col-pu{width:120px;}
+.items-form-table .col-precio{width:130px;}
+.items-form-table .col-del{width:34px;text-align:center;}
+.item-search-inp{min-height:36px;white-space:normal;}
+.precio-cell{font-weight:600;color:#2c3e50;text-align:right;padding-right:10px!important;}
+.total-display{background:#fafafa;border:2px solid #c0392b;border-radius:8px;padding:10px 18px;margin-top:12px;display:flex;justify-content:flex-end;align-items:center;gap:20px;}
+.total-label{font-size:13px;font-weight:700;color:#555;}
+.total-value{font-size:22px;font-weight:900;color:#c0392b;}
+.literal-display{background:#fff8e1;border:1px solid #f0c040;border-radius:6px;padding:7px 14px;margin-top:8px;font-style:italic;font-size:12.5px;color:#555;}
+.banco-info{background:#e8f4fd;border:1px solid #b0d4f0;border-radius:6px;padding:10px 14px;margin-top:8px;font-size:13px;line-height:1.6;}
+.fsec{font-size:13px;font-weight:700;color:#fff;background:#c0392b;padding:5px 12px;border-radius:4px;margin:14px 0 8px;letter-spacing:0.3px;}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.btn-del-row{background:none;border:none;color:#e74c3c;cursor:pointer;font-size:16px;padding:2px 6px;border-radius:4px;}
+.btn-del-row:hover{background:#fde;}
+.unid-ro{background:#f5f5f5!important;color:#555!important;text-align:center!important;}
+/* Autocomplete ítem */
+.item-auto-wrap{position:relative;width:100%;}
+.item-search-inp{width:100%;font-size:12px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;box-sizing:border-box;}
+.item-search-inp:focus{border-color:#c0392b;outline:none;}
+.item-dropdown{display:none;position:absolute;top:100%;left:0;right:0;max-height:220px;overflow-y:auto;
+  background:#fff;border:1px solid #ccc;border-radius:0 0 6px 6px;z-index:9999;
+  box-shadow:0 6px 18px rgba(0,0,0,.18);}
+.item-dropdown.open{display:block;}
+.item-dropdown-opt{padding:6px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid #f0f0f0;line-height:1.3;}
+.item-dropdown-opt:hover,.item-dropdown-opt.focused{background:#fbeae8;color:#c0392b;}
+.item-dropdown-opt .opt-cod{font-size:10px;color:#999;margin-right:4px;}
+/* Porcentaje */
+.pct-block{background:#f0f7ff;border:1px solid #b8d4f0;border-radius:8px;padding:10px 16px;margin-top:10px;}
+.pct-block .pct-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.pct-block label{font-size:12px;font-weight:700;color:#1a5276;white-space:nowrap;}
+.pct-range{width:140px;accent-color:#c0392b;}
+.pct-num{width:70px;padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-size:13px;text-align:center;}
+.pct-detail{font-size:12px;color:#555;margin-top:6px;display:flex;gap:24px;flex-wrap:wrap;}
+.pct-detail span{font-weight:600;color:#2c3e50;}
+.total-final{font-size:20px;font-weight:900;color:#c0392b;}
+
+/* ---- Modal override para scroll correcto ---- */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.55);
+  display:flex;align-items:center;justify-content:center;
+  z-index:1000;padding:16px;box-sizing:border-box;
+}
+.modal-box{
+  background:#fff;border-radius:12px;
+  box-shadow:0 8px 40px rgba(0,0,0,.22);
+  display:flex;flex-direction:column;
+}
+.modal-header{
+  padding:18px 24px;border-bottom:1px solid #eee;
+  display:flex;justify-content:space-between;align-items:center;
+  background:#1a2332;border-radius:12px 12px 0 0;
+}
+.modal-title{color:#fff;margin:0;font-size:18px;}
+.modal-close{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;opacity:.8;}
+.modal-close:hover{opacity:1;}
+.modal-footer{
+  padding:14px 24px;border-top:1px solid #eee;
+  display:flex;justify-content:flex-end;gap:10px;
+  background:#fafafa;border-radius:0 0 12px 12px;
+}
+.modal-body .form-group{margin-bottom:12px;}
+.modal-body .form-label{font-size:12px;font-weight:600;color:#555;margin-bottom:3px;display:block;}
+.modal-body .form-control{padding:7px 10px;font-size:13px;border:1px solid #d0d0d0;border-radius:6px;width:100%;box-sizing:border-box;}
+.modal-body .form-control:focus{border-color:#c0392b;outline:none;box-shadow:0 0 0 2px rgba(192,57,43,.12);}
+</style>
+</head>
+<body>
+<div id="sidebarContainer"></div>
+<div class="main-content">
+  <div id="topbarContainer"></div>
+  <div class="page-content">
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb"><span>EMAVIAS</span><span class="breadcrumb-sep">›</span><span>Cotizaciones Externos</span></div>
+        <div class="page-title">📄 Cotizaciones a Clientes Externos</div>
+        <div class="page-subtitle">Formulario UCO.P01.R03 — Registro de cotizaciones para terceros</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-outline btn-sm" onclick="triggerImport()">📥 Importar Excel</button>
+        <input type="file" id="fileImport" accept=".xlsx,.xlsm,.xls,.csv" style="display:none" onchange="handleImport(this)">
+        <button class="btn btn-success btn-sm" onclick="doExport()">📗 Exportar Excel</button>
+        <button class="btn btn-primary btn-sm" onclick="openForm()">➕ Nueva Cotización</button>
+      </div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid" style="margin-bottom:16px;"></div>
+
+    <div class="card">
+      <div class="filters-bar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Buscar N°, empresa, solicitante..." oninput="renderTable()">
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Estado:</span>
+          <select id="filtEstado" class="filter-control" onchange="renderTable()">
+            <option value="">Todos</option>
+            <option>Pendiente</option><option>Aprobada</option><option>Rechazada</option><option>Ejecutada</option>
+          </select>
+        </div>
+        <div class="spacer"></div>
+        <span id="countBadge" class="badge badge-secondary"></span>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr>
+            <th>N° Cot.</th><th>Fecha Emisión</th><th>Empresa</th><th>Solicitante</th>
+            <th>Ítems</th><th>Total (Bs.)</th><th>Estado</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL FORM ===== -->
+<div id="formModal" class="modal-overlay" style="display:none;">
+  <div class="modal-box" style="max-width:980px;width:97vw;max-height:96vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div class="modal-header" style="flex-shrink:0;">
+      <h2 class="modal-title" id="formTitle">Nueva Cotización</h2>
+      <button class="modal-close" onclick="closeForm()">✕</button>
+    </div>
+    <div class="modal-body" style="overflow-y:auto;flex:1;padding:16px 24px;">
+
+      <!-- Código / N° cabecera -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0 12px;border-bottom:2px solid #eee;margin-bottom:4px;">
+        <div>
+          <div style="font-size:10px;color:#aaa;font-weight:700;letter-spacing:1px;">CÓDIGO</div>
+          <div style="font-size:15px;font-weight:800;color:#c0392b;letter-spacing:0.5px;">UCO.P01.R03</div>
+          <div style="font-size:10px;color:#aaa;">VERSIÓN: 2</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:#aaa;font-weight:700;letter-spacing:1px;">N° DE COTIZACIÓN</div>
+          <div id="nroDisplay" style="font-size:26px;font-weight:900;color:#2c3e50;letter-spacing:1px;"></div>
+        </div>
+      </div>
+
+      <!-- DATOS DEL CLIENTE -->
+      <div class="fsec">📋 DATOS DEL CLIENTE</div>
+      <div class="fg2">
+        <div class="form-group">
+          <label class="form-label">Empresa *</label>
+          <input type="text" id="f_empresa" class="form-control" placeholder="Nombre de la empresa o cliente">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Dirección</label>
+          <input type="text" id="f_direccion" class="form-control" placeholder="Dirección del cliente">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Solicitante</label>
+          <input type="text" id="f_solicitante" class="form-control" placeholder="Nombre completo del solicitante">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Telf./Cel.</label>
+          <input type="text" id="f_telf" class="form-control" placeholder="Teléfono o celular">
+        </div>
+        <div class="form-group">
+          <label class="form-label">E-Mail</label>
+          <input type="email" id="f_email" class="form-control" placeholder="correo@ejemplo.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">NIT</label>
+          <input type="text" id="f_nit" class="form-control" placeholder="NIT del cliente">
+        </div>
+      </div>
+
+      <!-- DESCRIPCIÓN DE LO SOLICITADO -->
+      <div class="fsec">📝 DESCRIPCIÓN DE LO SOLICITADO</div>
+
+      <!-- PORCENTAJE sobre P.U. -->
+      <div class="pct-block" style="margin-bottom:10px;">
+        <div class="pct-row">
+          <label>% APLICADO AL P.U. (7%–15%):</label>
+          <input type="range" id="f_pct" class="pct-range" min="7" max="15" step="1" value="10" oninput="onPctChange(this.value)">
+          <input type="number" id="f_pct_num" class="pct-num" min="7" max="15" step="1" value="10" oninput="onPctChange(this.value)">
+          <span style="font-size:12px;color:#555;font-weight:600;">% aplicado sobre el Precio Unitario de cada ítem</span>
+        </div>
+        <div style="font-size:11px;color:#777;margin-top:4px;">
+          El P.U. mostrado = P.U. base × (1 + %/100). Cambia el porcentaje para ajustar todos los precios unitarios automáticamente.
+        </div>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="items-form-table" id="itemsTable">
+          <thead>
+            <tr>
+              <th class="col-n">N°</th>
+              <th class="col-item">Ítem</th>
+              <th class="col-unid">Unidad</th>
+              <th class="col-cant">Cantidad</th>
+              <th class="col-pu">P.U. (Bs.)</th>
+              <th class="col-precio">Precio (Bs.)</th>
+              <th class="col-del"></th>
+            </tr>
+          </thead>
+          <tbody id="itemsBody"></tbody>
+        </table>
+      </div>
+      <button type="button" class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="addItemRow()">➕ Agregar Ítem</button>
+
+      <!-- TOTALES -->
+      <div class="total-display">
+        <span class="total-label">PRECIO TOTAL Bs. (NUMERAL):</span>
+        <span class="total-value" id="totalNumeral">0,00</span>
+      </div>
+      <div class="literal-display">
+        <strong>PRECIO Bs. (LITERAL):</strong>&nbsp;<span id="totalLiteral">CERO 00/100 BOLIVIANOS</span>
+      </div>
+
+      <!-- BANCO -->
+      <div class="banco-info">
+        <strong>* PARA LA EJECUCIÓN DE LO SOLICITADO DEPOSITAR PREVIAMENTE EN:</strong><br>
+        Entidad Financiera: <strong>BANCO UNIÓN</strong> &nbsp;|&nbsp;
+        Cuenta N° (Bolivianos): <strong>1 - 00 00 0 - 18 40 21 27</strong> &nbsp;|&nbsp;
+        Nombre de la Cuenta: <strong>EMAVIAS - RECURSOS PROPIOS</strong>
+      </div>
+
+      <!-- DATOS DE LA EJECUCIÓN -->
+      <div class="fsec">🏗️ DATOS DE LA EJECUCIÓN</div>
+      <div class="form-group">
+        <label class="form-label">Dirección / Ubicación de la Obra</label>
+        <input type="text" id="f_dirObra" class="form-control" placeholder="Zona, barrio, avenida, calle...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha Tentativa</label>
+        <input type="text" id="f_fechaTentativa" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observaciones y/o Recomendaciones</label>
+        <textarea id="f_observaciones" class="form-control" rows="6"></textarea>
+      </div>
+
+      <!-- OTROS -->
+      <div class="fsec">📎 OTROS</div>
+      <div class="fg3">
+        <div class="form-group">
+          <label class="form-label">Vigencia (días calendario)</label>
+          <input type="number" id="f_vigencia" class="form-control" value="30" min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha de Emisión</label>
+          <input type="date" id="f_fechaEmision" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <select id="f_estado" class="form-control">
+            <option>Pendiente</option><option>Aprobada</option><option>Rechazada</option><option>Ejecutada</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="flex-shrink:0;">
+      <button class="btn btn-outline" onclick="closeForm()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveForm()">💾 Guardar Cotización</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PRINT AREA ===== -->
+<div id="printArea" class="pw"></div>
+
+<script src="js/app.js"></script>
+<script>
+AUTH.require();
+document.getElementById('sidebarContainer').innerHTML = renderSidebar('cotizaciones-externos');
+document.getElementById('topbarContainer').innerHTML = renderTopbar('Cotizaciones Externos', 'Formulario UCO.P01.R03 para terceros');
+
+// ============================================================
+// CATÁLOGO DE ÍTEMS (de Excel RESUMEN ITEMS + APU EXTERNOS)
+// ============================================================
+const CATALOGO = [
+  {cod:'EI-PRE-INS-0001', desc:'INST DE FAENAS BASICAS', unid:'Gl.', pu:3314.62},
+  {cod:'EI-PRE-REM-0002', desc:'REMOCION DE ADOQUINES CON MAQUINARIA', unid:'m2', pu:59.33},
+  {cod:'EI-PRE-RET-0003', desc:'RETIRO DE ESCOMBROS C/CARGUIO CON MAQUINARIA', unid:'m3', pu:234.81},
+  {cod:'EI-PRE-REP-0004', desc:'REPLANTEO Y TRAZADO DE OBRAS CIVILES CON ESTACION TOTAL', unid:'Gl.', pu:2868.42},
+  {cod:'EI-PRE-REP-0005', desc:'REPLANTEO Y TRAZADO DE TUBERIAS', unid:'m', pu:8.79},
+  {cod:'EI-PRE-REP-0006', desc:'REPLANTEO DE VIAS Y GRADERIAS', unid:'m', pu:26.4},
+  {cod:'EI-EST-EXC-0001', desc:'EXCAVACION DE 0 - 1 m S/AGOTAMIENTO TERRENO SEMIDURO', unid:'m3', pu:114.9},
+  {cod:'EI-EST-EXC-0002', desc:'EXCAVACION 0 - 2 m S/AGOTAMIENTO TERRENO SEMIDURO', unid:'m3', pu:137.9},
+  {cod:'EI-PRE-LIM-0007', desc:'LIMPIEZA Y RETIRO DE ESCOMBROS', unid:'m3', pu:136.94},
+  {cod:'EI-PRE-DES-0008', desc:'DESHIERBE MANUAL Y APLICACION DE HERBICIDA', unid:'m2', pu:10.5},
+  {cod:'EI-VIA-CAP-0001', desc:'CAPA SUB BASE (C/MAQUINARIA Y SIN PROVISION DE MATERIAL), INCLUYE CONFORMACION Y NIVELADO', unid:'m2', pu:37.83},
+  {cod:'EI-VIA-CAP-0002', desc:'CAPA BASE (C/MAQUINARIA) SIN PROVISION DE MATERIAL, INCLUYE CONFORMACION Y NIVELADO', unid:'m2', pu:37.71},
+  {cod:'EI-VIA-CAP-0003', desc:'CAPA BASE (C/MAQUINARIA) Y PROVISION DE MATERIAL CHANCADO, INCLUYE CONFORMACION Y NIVELADO', unid:'m2', pu:165.87},
+  {cod:'EI-VIA-SUB-0004', desc:'SUB RASANTE SIN PROVISION DE MATERIAL, INCLUYE CONFORMACION Y NIVELADO', unid:'m2', pu:37.26},
+  {cod:'EI-EST-REL-0003', desc:'RELLENO Y COMPACTADO CON TIERRA COMUN (NO INCLUYE MATERIAL)', unid:'m3', pu:66.1},
+  {cod:'EI-EST-REL-0004', desc:'RELLENO Y COMPACTADO CON TIERRA CERNIDA', unid:'m3', pu:277.36},
+  {cod:'EI-EST-REL-0005', desc:'RELLENO Y COMPACTADO CON MATERIAL SELECCIONADO (C/PROV MATERIAL)', unid:'m3', pu:259.28},
+  {cod:'EI-EST-HOR-0006', desc:'HORMIGON CICLOPEO CON 30% DE PIEDRA DESPLAZADORA DOSIF 1:3:4', unid:'m3', pu:1571.92},
+  {cod:'EI-VIA-CAP-0005', desc:'CAPA BASE SUELO CEMENTO E= 30 cm CON PROVISION DE CAPA BASE PARA BACHES PROFUNDOS, INCLUYE CONFORMACION Y NIVELADO', unid:'m2', pu:173.27},
+  {cod:'EI-VIA-CAP-0006', desc:'CAPA BASE CON PROVISION DE CAPA BASE PARA BACHES PROFUNDOS ESPESOR 30 cm, INCLUYE CONFORMACION Y NIVELADO', unid:'m2', pu:161.2},
+  {cod:'EI-URB-SEÑ-0002', desc:'SEÑALIZACION VERTICAL 75 x 50 cm (NO REFLECTIVA)', unid:'Pza.', pu:614.47},
+  {cod:'EI-URB-LET-0003', desc:'LETRERO DE OBRA DE 2 x 1 m (TIPO BANNER) CON BASTIDOR METALICO', unid:'Pza.', pu:605.32},
+  {cod:'EI-ENS-MED-0001', desc:'MEDICION ACUSTICA', unid:'Pto.', pu:672.12},
+  {cod:'EI-ENS-MED-0002', desc:'MEDICION DE PARTICULAS SUSPENDIDAS', unid:'Pto.', pu:886.64},
+  {cod:'EI-ENS-ENS-0003', desc:'ENSAYO DE COMPACTACION PROCTOR T-180-D', unid:'Ensy.', pu:262.74},
+  {cod:'EI-ARQ-ENL-0001', desc:'ENLUCIDO DE CEMENTO MORT 1:3 E= 0.5 cm', unid:'m2', pu:80.04},
+  {cod:'EI-HID-TUB-0001', desc:'TUBERIA PVC 8" SDR-41 ANILLO DE GOMA, TENDIDO', unid:'m', pu:173.29},
+  {cod:'EI-HID-CAM-0002', desc:'CAMARA CON HORMIGON SIMPLE H21, ELEVACION', unid:'m3', pu:2845.47},
+  {cod:'EI-HID-SUM-0003', desc:'SUMIDERO TIPO RIII', unid:'Pza.', pu:5094.85},
+  {cod:'EI-HID-TAP-0005', desc:'TAPA DE H.A. PARA CAMARA DE 1 x 0.5 x 0.1 m DOSIF 1:2:4', unid:'Pza.', pu:394.06},
+  {cod:'EI-HID-TAP-0006', desc:'TAPA CIRCULAR DE H.A. D= 70 cm, E= 10 cm H21', unid:'Pza.', pu:367.1},
+  {cod:'EI-VIA-REC-0008', desc:'RECAPEO MANUAL CON CARPETA ASFALTICA E= 3 cm (PRODUCCION, IMPRIMACION, TRANSPORTE Y COLOCACION) CON PROVISION DE CEMENTO ASFALTICO', unid:'m2', pu:241.83},
+  {cod:'EI-VIA-REC-0009', desc:'RECAPAMIENTO CON CARPETA ASFALTICA E= 5 cm (PRODUC, IMPRIMAC, TRANSPORTE Y COLOCACION) CON PROVISION DE CEMENTO ASFALTICO', unid:'m2', pu:338.49},
+  {cod:'EI-VIA-CAR-0010', desc:'CARPETA ASFALTICA (E= 5 cm) C/PROVISION DE CEMENTO ASFALTICO E IMPRIMACION SOBRE CAPA BASE PARA VIAS URBANAS', unid:'m2', pu:322.64},
+  {cod:'EI-VIA-CAR-0011', desc:'CARPETA ASFALTICA (Emin= 5 cm) C/PROVISION DE CEMENTO ASFALTICO E IMPRIMACION SOBRE VIAS EMPEDRADAS, INCLUYE EL UNIFORMAR LOS INTERSTICIOS DEL EMPEDRADO', unid:'m2', pu:365.37},
+  {cod:'EI-VIA-CAR-0014', desc:'CARPETA ASFALTICA (E= 7 cm) C/PROVISION DE CEMENTO ASFALTICO E IMPRIMACION SOBRE CAPA BASE PARA VIAS URBANAS', unid:'m2', pu:408.61},
+  {cod:'EI-VIA-FRE-0020', desc:'FRESADO DE CARPETA ASFALTICA HASTA 3 cm', unid:'m2', pu:25.07},
+  {cod:'EI-VIA-ACE-0019', desc:'ACERA DE CONCRETO E= 4 cm DOSIF 1:2:4 C/EMPEDRADO', unid:'m2', pu:168.89},
+  {cod:'EI-VIA-BOR-0017', desc:'BORDILLO DE H.P. PREFABRICADO 100 x 35 x 18 x 14 cm', unid:'Pza.', pu:206.39},
+  {cod:'EI-PRE-COR-0009', desc:'CORTADO DE CARPETA ASFALTICA', unid:'m', pu:2.93},
+  {cod:'EI-VIA-COR-0016', desc:'CORDON DE CONCRETO DE 20 x 35 cm', unid:'m', pu:353.42},
+  {cod:'EI-VIA-CUN-0013', desc:'CUNETA DE PIEDRA CON REVESTIMIENTO DOSIF. 1:2:3 E= 4 cm', unid:'m2', pu:315.53},
+  {cod:'EI-PRE-RIE-0010', desc:'RIEGO CON CISTERNA', unid:'m2', pu:8.5},
+  {cod:'EI-HID-BAR-0007', desc:'BARBACANAS DE PVC', unid:'m', pu:38.74},
+  {cod:'EI-INS-TAC-0001', desc:'TACHONES DE RESINA CON REFLECTIVOS', unid:'Pza.', pu:305.33},
+  {cod:'EI-PRE-DEM-0011', desc:'DEMOLICION DE CORDON DE ACERA', unid:'m', pu:32.11},
+  {cod:'EI-URB-SEÑ-0005', desc:'SEÑALIZACION VERTICAL 90 x 60 cm (NO REFLECTIVA)', unid:'Pza.', pu:662.25},
+  {cod:'EI-INS-TAC-0003', desc:'TACHAS (OJOS DE GATO)', unid:'Pza.', pu:124.63},
+  {cod:'EI-URB-SEÑ-0011', desc:'SEÑALIZACION VERTICAL 60 x 60 cm (NO REFLECTIVA)', unid:'Pza.', pu:611.13},
+  {cod:'EI-VIA-BAC-0012', desc:'BACHEO MANUAL (PRODUCCION, IMPRIMACION, TRANSPORTE Y COLOCACION) CON PROVISION DE CEMENTO ASFALTICO', unid:'m2', pu:297.93},
+  {cod:'EI-VIA-BAC-0015', desc:'BACHEO DE NIVELACION CON PROVISION DE CEMENTO ASFALTICO (PRODUCCION, TRANSPORTE Y COLOCACION) NO INCLUYE IMPRIMACION, PARA ASFALTADOS NUEVOS', unid:'m2', pu:277.71},
+  {cod:'EI-EST-GEO-0007', desc:'GEOMALLA TRIAXIAL', unid:'m2', pu:49.97},
+  {cod:'EI-VIA-CAR-0018', desc:'CARPETA ASFALTICA (Emin= 5 cm) C/PROVISION DE CEMENTO ASFALTICO Y RIEGO DE LIGA SOBRE VIAS CON ENLOSETADO DE HORMIGON, INCLUYE EL UNIFORMAR LOS INTERSTICIOS DEL ENLOSETADO', unid:'m2', pu:306.21},
+  {cod:'EI-PRE-DEM-0012', desc:'DEMOLICION DE HORMIGON SIMPLE', unid:'m3', pu:598.72},
+  {cod:'EI-PRE-DEM-0013', desc:'DEMOLICION DE HORMIGON ARMADO', unid:'m3', pu:645.56},
+  {cod:'EI-PRE-DEM-0014', desc:'DEMOLICION CON MARTILLO DEMOLEDOR DE LOSAS DE PAVIMENTO RIGIDO', unid:'m2', pu:123.01},
+  {cod:'EI-URB-SEÑ-0008', desc:'SEÑALIZACION HORIZONTAL REFLECTIVA CON CINTA ASFALTICA A= 10.3 cm', unid:'m', pu:99.41},
+  // — Ítems Externos (EXT) —
+  {cod:'EX-01', desc:'PINTURA TERMOPLASTICA CON MICROESFERAS - EXT', unid:'m2', pu:569.84},
+  {cod:'EX-02', desc:'PRODUCCION DE MEZCLA ASFALTICA DE BACHEO PUESTA EN PLANTA', unid:'m3', pu:5153.38},
+  {cod:'EX-03', desc:'IMPRIMANTE RC-250', unid:'Turril', pu:5403.29},
+  {cod:'EX-04', desc:'PRODUCCION DE MEZCLA ASFALTICA DE BACHEO PUESTA EN OBRA', unid:'m3', pu:5556.52},
+  {cod:'EX-05', desc:'ROMPE MUELLES DE MEZCLA ASFALTICA + PINTADO BASE DE 1.5 M DEL EJE AMBOS LADOS', unid:'ml', pu:2369.27},
+  {cod:'EX-06', desc:'PROVISION DE CAPA BASE', unid:'m3', pu:175.67},
+  {cod:'EX-07', desc:'TRANSPORTE DE MATERIAL C/MAQUINARIA (RADIO URBANO) PARA EXTERNOS', unid:'m3*km', pu:9.78},
+  {cod:'EX-08', desc:'FRESADO DE CARPETA ASFALTICA HASTA 3 cm (SIN CAMION VOLQUETA Y CISTERNA)', unid:'m2', pu:9.41},
+  {cod:'EX-09', desc:'SEÑALIZACION VERTICAL 90 x 60 cm GRADO DIAMANTE (3 COLORES) EXT', unid:'Pza.', pu:2204.55},
+];
+
+const OBS_DEFAULT = `*LA EMPRESA SOLICITANTE DEBERÁ COORDINAR Y LIBERAR LA PLATAFORMA MEDIANTE CORREO O DE FORMA ESCRITA PARA LA PROGRAMACIÓN Y EJECUCIÓN DE LA OBRA CON ANTICIPACIÓN.
+*LAS CANTIDADES ESTABLECIDAS EN LA COTIZACIÓN PODRÍAN VARIAR DE ACUERDO AL EMPLAZAMIENTO QUE SERÁ SUPERVISADO POR LA EMPRESA SOLICITANTE Y DIRIGIDO POR EMAVIAS.
+*LA EMPRESA SOLICITANTE DEBE LLEVAR UN REGISTRO Y CONTROL DE LOS TRABAJOS REALIZADOS EN OBRA.
+*CUALQUIER CAMBIO ACONTECIDO EN CUANTO A PLAZOS, MEDICIONES DE ÍTEMS U OTROS, DEBE SER INFORMADO CON ANTICIPACIÓN A EMAVIAS.
+*EL ÁREA A EJECUTARSE DEBERÁ ENCONTRARSE BIEN CONFORMADA PARA EVITAR POSIBLES FALLAS O HUNDIMIENTOS EN LA MEZCLA REPUESTA ADEMÁS DE NIVELADA A UNA PROFUNDIDAD DE 5CM.
+*CASO DE QUE EL ÁREA DE TRABAJO ESTE POR ENCIMA DE LOS 5CM Y LA MEZCLA SOLICITADA DE LA PRESENTE COTIZACIÓN NO LOGRASE CUBRIR EL ÁREA PAGADA, SERA SUJETO A UNA NUEVA COTIZACIÓN POR EL ÁREA FALTANTE.`;
+
+const FECHA_TENT_DEFAULT = 'A DEFINIR CON LA EMPRESA DE ACUERDO A PROGRAMACIÓN POR LA UNIDAD DE OBRAS.';
+
+// ============================================================
+// NÚMERO EN LETRAS (español boliviano)
+// ============================================================
+function numLiteral(n) {
+  if (isNaN(n) || n < 0) return 'CERO 00/100 BOLIVIANOS';
+  const partes = n.toFixed(2).split('.');
+  const cents = partes[1] || '00';
+  return numToWords(parseInt(partes[0])).toUpperCase() + ' ' + cents + '/100 BOLIVIANOS';
+}
+function numToWords(n) {
+  if (n === 0) return 'CERO';
+  const ones = ['','UNO','DOS','TRES','CUATRO','CINCO','SEIS','SIETE','OCHO','NUEVE',
+    'DIEZ','ONCE','DOCE','TRECE','CATORCE','QUINCE','DIECISÉIS','DIECISIETE','DIECIOCHO','DIECINUEVE'];
+  const tens = ['','','VEINTE','TREINTA','CUARENTA','CINCUENTA','SESENTA','SETENTA','OCHENTA','NOVENTA'];
+  const hundreds = ['','CIEN','DOSCIENTOS','TRESCIENTOS','CUATROCIENTOS','QUINIENTOS',
+    'SEISCIENTOS','SETECIENTOS','OCHOCIENTOS','NOVECIENTOS'];
+  if (n < 20) return ones[n];
+  if (n < 100) {
+    const t=Math.floor(n/10), u=n%10;
+    if (t===2 && u>0) return 'VEINTI'+ones[u].toLowerCase();
+    return tens[t]+(u?' Y '+ones[u]:'');
+  }
+  if (n===100) return 'CIEN';
+  if (n < 1000) { const h=Math.floor(n/100),r=n%100; return hundreds[h]+(r?' '+numToWords(r):''); }
+  if (n < 2000) return 'MIL'+(n%1000?' '+numToWords(n%1000):'');
+  if (n < 1000000) { const m=Math.floor(n/1000),r=n%1000; return numToWords(m)+' MIL'+(r?' '+numToWords(r):''); }
+  if (n < 2000000) return 'UN MILLÓN'+(n%1000000?' '+numToWords(n%1000000):'');
+  const m=Math.floor(n/1000000),r=n%1000000; return numToWords(m)+' MILLONES'+(r?' '+numToWords(r):'');
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function fmtBs(v){ return 'Bs. '+Number(v||0).toLocaleString('es-BO',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtN(v){ return Number(v||0).toLocaleString('es-BO',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function nroFmt(id){ return String(id).padStart(3,'0')+'/'+new Date().getFullYear(); }
+
+// ============================================================
+// STATS
+// ============================================================
+function renderStats() {
+  const data = DB.get('cotizaciones_ext');
+  const total = data.length;
+  const pend = data.filter(d=>d.estado==='Pendiente').length;
+  const aprob = data.filter(d=>d.estado==='Aprobada').length;
+  const monto = data.reduce((s,d)=>s+(Number(d.total)||0),0);
+  document.getElementById('statsGrid').innerHTML =
+    `<div class="stat-card"><div class="stat-value">${total}</div><div class="stat-label">Total Cotizaciones</div></div>`+
+    `<div class="stat-card"><div class="stat-value">${pend}</div><div class="stat-label">Pendientes</div></div>`+
+    `<div class="stat-card"><div class="stat-value">${aprob}</div><div class="stat-label">Aprobadas</div></div>`+
+    `<div class="stat-card"><div class="stat-value">${fmtBs(monto)}</div><div class="stat-label">Monto Total</div></div>`;
+}
+
+// ============================================================
+// TABLE
+// ============================================================
+function renderTable() {
+  const q=(document.getElementById('searchInput').value||'').toLowerCase();
+  const fe=document.getElementById('filtEstado').value;
+  let data=DB.get('cotizaciones_ext');
+  if(q) data=data.filter(d=>(d.nro||'').toLowerCase().includes(q)||(d.empresa||'').toLowerCase().includes(q)||(d.solicitante||'').toLowerCase().includes(q));
+  if(fe) data=data.filter(d=>d.estado===fe);
+  data.sort((a,b)=>b.id-a.id);
+  document.getElementById('countBadge').textContent=data.length+' registros';
+  const bmap={'Pendiente':'badge-warning','Aprobada':'badge-success','Rechazada':'badge-danger','Ejecutada':'badge-secondary'};
+  document.getElementById('tableBody').innerHTML=data.map(d=>{
+    const ni=(d.items||[]).length;
+    return `<tr>
+      <td><strong>${escHtml(d.nro||'')}</strong></td>
+      <td>${formatDate(d.fechaEmision)}</td>
+      <td><strong>${escHtml(d.empresa||'—')}</strong></td>
+      <td>${escHtml(d.solicitante||'—')}</td>
+      <td><span class="badge badge-secondary">${ni} ítem${ni!==1?'s':''}</span></td>
+      <td><strong>${fmtBs(d.total)}</strong></td>
+      <td><span class="badge ${bmap[d.estado]||'badge-secondary'}">${escHtml(d.estado||'')}</span></td>
+      <td>
+        <button class="btn btn-outline btn-xs" onclick="printCot(${d.id})" title="Imprimir">🖨️</button>
+        <button class="btn btn-outline btn-xs" onclick="editForm(${d.id})" title="Editar">✏️</button>
+        <button class="btn btn-danger btn-xs" onclick="delRec(${d.id})" title="Eliminar">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="8" style="text-align:center;color:#aaa;padding:24px;">No hay cotizaciones registradas</td></tr>';
+}
+
+// ============================================================
+// ITEMS TABLE DYNAMIC — con autocomplete (sin código visible)
+// ============================================================
+let _editId=null;
+
+function buildItemAuto(selCod=''){
+  const found=CATALOGO.find(c=>c.cod===selCod);
+  const txt=found?found.desc:'';
+  return `<div class="item-auto-wrap">
+    <input type="text" class="item-search-inp" value="${escHtml(txt)}"
+      placeholder="Escriba para buscar ítem..."
+      autocomplete="off"
+      oninput="filterItems(this)"
+      onfocus="filterItems(this)"
+      onkeydown="navDropdown(event,this)">
+    <input type="hidden" class="item-cod-h" value="${escHtml(selCod)}">
+    <div class="item-dropdown"></div>
+  </div>`;
+}
+
+function filterItems(inp){
+  const wrap=inp.closest('.item-auto-wrap');
+  const dd=wrap.querySelector('.item-dropdown');
+  const q=(inp.value||'').toLowerCase();
+  const list=q?CATALOGO.filter(c=>c.desc.toLowerCase().includes(q)||c.cod.toLowerCase().includes(q)):CATALOGO;
+  dd.innerHTML=list.map(c=>`<div class="item-dropdown-opt"
+    data-cod="${escHtml(c.cod)}" data-unid="${escHtml(c.unid)}" data-pu="${c.pu}"
+    onmousedown="selectItem(this)">
+    <span class="opt-cod">${escHtml(c.cod)}</span>${escHtml(c.desc)}
+    <span style="float:right;color:#c0392b;font-size:10px;">${escHtml(c.unid)} · ${fmtN(c.pu)}</span>
+  </div>`).join('');
+  dd.classList.toggle('open', list.length>0);
+}
+
+function selectItem(opt){
+  const wrap=opt.closest('.item-auto-wrap');
+  wrap.querySelector('.item-search-inp').value=opt.querySelector('.opt-cod').nextSibling.textContent.trim();
+  wrap.querySelector('.item-cod-h').value=opt.dataset.cod;
+  wrap.querySelector('.item-dropdown').classList.remove('open');
+  const tr=wrap.closest('tr');
+  tr.querySelector('.unid-ro').value=opt.dataset.unid||'';
+  const basePu=parseFloat(opt.dataset.pu)||0;
+  tr.querySelector('.base-pu-h').value=basePu;
+  const pct=parseInt(document.getElementById('f_pct').value)||10;
+  tr.querySelector('.pu-i').value=(basePu*(1+pct/100)).toFixed(2);
+  calcRow(tr.querySelector('.cant-i'));
+}
+
+function navDropdown(e,inp){
+  const dd=inp.closest('.item-auto-wrap').querySelector('.item-dropdown');
+  const opts=[...dd.querySelectorAll('.item-dropdown-opt')];
+  let fi=opts.findIndex(o=>o.classList.contains('focused'));
+  if(e.key==='ArrowDown'){ e.preventDefault(); fi=Math.min(fi+1,opts.length-1); }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); fi=Math.max(fi-1,0); }
+  else if(e.key==='Enter'&&fi>=0){ e.preventDefault(); selectItem(opts[fi]); return; }
+  else if(e.key==='Escape'){ dd.classList.remove('open'); return; }
+  opts.forEach((o,i)=>o.classList.toggle('focused',i===fi));
+  if(fi>=0) opts[fi].scrollIntoView({block:'nearest'});
+}
+
+// Cerrar dropdown al hacer clic fuera
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.item-auto-wrap'))
+    document.querySelectorAll('.item-dropdown.open').forEach(d=>d.classList.remove('open'));
+});
+
+function addItemRow(cod='', unid='', cant='', pu='', basePu=''){
+  const tbody=document.getElementById('itemsBody');
+  const n=tbody.rows.length+1;
+  // pu aquí es el P.U. ya ajustado (guardado); basePu es el original del catálogo
+  const precio=(parseFloat(cant)||0)*(parseFloat(pu)||0);
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td class="col-n">${n}</td>
+    <td class="col-item">${buildItemAuto(cod)}</td>
+    <td class="col-unid"><input type="text" class="unid-ro" value="${escHtml(unid)}" readonly></td>
+    <td class="col-cant"><input type="number" class="cant-i" value="${cant}" min="0" step="any" oninput="calcRow(this)" placeholder="0"></td>
+    <td class="col-pu">
+      <input type="number" class="pu-i" value="${pu}" min="0" step="0.01" oninput="calcRow(this)" placeholder="0.00">
+      <input type="hidden" class="base-pu-h" value="${basePu||pu}">
+    </td>
+    <td class="col-precio precio-cell"><span class="prec-s">${fmtN(precio)}</span></td>
+    <td class="col-del"><button type="button" class="btn-del-row" onclick="delRow(this)">✕</button></td>`;
+  tbody.appendChild(tr);
+  renumRows();
+  calcTotal();
+}
+
+function calcRow(inp){
+  const tr=inp.closest('tr');
+  const cant=parseFloat(tr.querySelector('.cant-i').value)||0;
+  const pu=parseFloat(tr.querySelector('.pu-i').value)||0;
+  tr.querySelector('.prec-s').textContent=fmtN(cant*pu);
+  calcTotal();
+}
+
+function delRow(btn){ btn.closest('tr').remove(); renumRows(); calcTotal(); }
+
+function renumRows(){
+  document.querySelectorAll('#itemsBody tr').forEach((tr,i)=>{ tr.cells[0].textContent=i+1; });
+}
+
+function calcTotal(){
+  let t=0;
+  document.querySelectorAll('#itemsBody tr').forEach(tr=>{
+    t+=(parseFloat(tr.querySelector('.cant-i').value)||0)*(parseFloat(tr.querySelector('.pu-i').value)||0);
+  });
+  document.getElementById('totalNumeral').textContent=fmtN(t);
+  document.getElementById('totalLiteral').textContent=numLiteral(t);
+}
+
+// Aplica el % al P.U. base de cada fila y recalcula
+function onPctChange(val){
+  val=Math.min(15,Math.max(7,parseInt(val)||10));
+  document.getElementById('f_pct').value=val;
+  document.getElementById('f_pct_num').value=val;
+  document.querySelectorAll('#itemsBody tr').forEach(tr=>{
+    const baseH=tr.querySelector('.base-pu-h');
+    const puI=tr.querySelector('.pu-i');
+    if(!baseH||!puI) return;
+    const base=parseFloat(baseH.value)||0;
+    if(base>0) puI.value=(base*(1+val/100)).toFixed(2);
+    calcRow(puI);
+  });
+}
+
+// ============================================================
+// FORM OPEN / CLOSE
+// ============================================================
+function openForm(){
+  _editId=null;
+  document.getElementById('formTitle').textContent='Nueva Cotización';
+  const nextId=DB.nextId('cotizaciones_ext');
+  document.getElementById('nroDisplay').textContent=nroFmt(nextId);
+  ['f_empresa','f_direccion','f_solicitante','f_telf','f_email','f_nit','f_dirObra'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f_fechaTentativa').value=FECHA_TENT_DEFAULT;
+  document.getElementById('f_observaciones').value=OBS_DEFAULT;
+  document.getElementById('f_vigencia').value='30';
+  document.getElementById('f_fechaEmision').value=todayStr();
+  document.getElementById('f_estado').value='Pendiente';
+  document.getElementById('f_pct').value='10';
+  document.getElementById('f_pct_num').value='10';
+  document.getElementById('itemsBody').innerHTML='';
+  addItemRow();
+  calcTotal();
+  document.getElementById('formModal').style.display='flex';
+}
+
+function editForm(id){
+  const d=DB.get('cotizaciones_ext').find(x=>x.id===id);
+  if(!d) return;
+  _editId=id;
+  document.getElementById('formTitle').textContent='Editar Cotización '+d.nro;
+  document.getElementById('nroDisplay').textContent=d.nro||'';
+  document.getElementById('f_empresa').value=d.empresa||'';
+  document.getElementById('f_direccion').value=d.direccion||'';
+  document.getElementById('f_solicitante').value=d.solicitante||'';
+  document.getElementById('f_telf').value=d.telf||'';
+  document.getElementById('f_email').value=d.email||'';
+  document.getElementById('f_nit').value=d.nit||'';
+  document.getElementById('f_dirObra').value=d.dirObra||'';
+  document.getElementById('f_fechaTentativa').value=d.fechaTentativa||FECHA_TENT_DEFAULT;
+  document.getElementById('f_observaciones').value=d.observaciones||OBS_DEFAULT;
+  document.getElementById('f_vigencia').value=d.vigencia||30;
+  document.getElementById('f_fechaEmision').value=d.fechaEmision||todayStr();
+  document.getElementById('f_estado').value=d.estado||'Pendiente';
+  const pv=d.porcentaje||10;
+  document.getElementById('f_pct').value=pv;
+  document.getElementById('f_pct_num').value=pv;
+  document.getElementById('itemsBody').innerHTML='';
+  (d.items||[]).forEach(it=>addItemRow(it.cod,it.unid,it.cant,it.pu,it.basePu||it.pu));
+  if(!(d.items||[]).length) addItemRow();
+  calcTotal();
+  document.getElementById('formModal').style.display='flex';
+}
+
+function closeForm(){ document.getElementById('formModal').style.display='none'; }
+
+// ============================================================
+// SAVE
+// ============================================================
+function saveForm(){
+  const empresa=document.getElementById('f_empresa').value.trim();
+  if(!empresa){ alert('Ingrese el nombre de la empresa / cliente.'); return; }
+  const items=[];
+  document.querySelectorAll('#itemsBody tr').forEach(tr=>{
+    const codH=tr.querySelector('.item-cod-h');
+    const cod=codH?codH.value:'';
+    if(!cod) return;
+    const cat=CATALOGO.find(c=>c.cod===cod);
+    const desc=cat?cat.desc:cod;
+    const unid=tr.querySelector('.unid-ro').value;
+    const cant=parseFloat(tr.querySelector('.cant-i').value)||0;
+    const pu=parseFloat(tr.querySelector('.pu-i').value)||0;
+    const basePu=parseFloat(tr.querySelector('.base-pu-h').value)||pu;
+    items.push({cod,desc,unid,cant,pu,basePu,precio:cant*pu});
+  });
+  if(!items.length){ alert('Agregue al menos un ítem seleccionado.'); return; }
+  const total=items.reduce((s,it)=>s+it.precio,0);
+  const pct=Math.min(15,Math.max(7,parseInt(document.getElementById('f_pct').value)||10));
+  const rec={
+    empresa,
+    direccion:document.getElementById('f_direccion').value,
+    solicitante:document.getElementById('f_solicitante').value,
+    telf:document.getElementById('f_telf').value,
+    email:document.getElementById('f_email').value,
+    nit:document.getElementById('f_nit').value,
+    items, total, porcentaje:pct,
+    dirObra:document.getElementById('f_dirObra').value,
+    fechaTentativa:document.getElementById('f_fechaTentativa').value,
+    observaciones:document.getElementById('f_observaciones').value,
+    vigencia:document.getElementById('f_vigencia').value,
+    fechaEmision:document.getElementById('f_fechaEmision').value,
+    estado:document.getElementById('f_estado').value,
+  };
+  const data=DB.get('cotizaciones_ext');
+  if(_editId){
+    const idx=data.findIndex(x=>x.id===_editId);
+    if(idx>=0) data[idx]={...data[idx],...rec};
+  } else {
+    const id=DB.nextId('cotizaciones_ext');
+    data.push({id, nro:nroFmt(id), ...rec});
+  }
+  DB.set('cotizaciones_ext',data);
+  closeForm();
+  renderStats();
+  renderTable();
+}
+
+// ============================================================
+// DELETE
+// ============================================================
+function delRec(id){
+  if(!confirm('¿Eliminar esta cotización?')) return;
+  DB.set('cotizaciones_ext',DB.get('cotizaciones_ext').filter(x=>x.id!==id));
+  renderStats(); renderTable();
+}
+
+// ============================================================
+// PRINT
+// ============================================================
+function printCot(id){
+  const d=DB.get('cotizaciones_ext').find(x=>x.id===id);
+  if(!d) return;
+  const rows=(d.items||[]).map((it,i)=>`<tr>
+    <td style="text-align:center;border:1px solid #000;">${i+1}</td>
+    <td style="border:1px solid #000;padding:3px 5px;font-size:8.5pt;">${escHtml(it.desc||it.cod||'')}</td>
+    <td style="text-align:center;border:1px solid #000;">${escHtml(it.unid||'')}</td>
+    <td style="text-align:right;border:1px solid #000;padding:3px 5px;">${fmtN(it.cant)}</td>
+    <td style="text-align:right;border:1px solid #000;padding:3px 5px;">${fmtN(it.pu)}</td>
+    <td style="text-align:right;border:1px solid #000;padding:3px 5px;font-weight:600;">${fmtN(it.precio)}</td>
+  </tr>`).join('');
+  const total=Number(d.total)||0;
+  const pct=Number(d.porcentaje)||0;
+  const obs=(d.observaciones||'').split('\n').map(l=>escHtml(l)).join('<br>');
+
+  document.getElementById('printArea').innerHTML=`
+  <table style="margin-bottom:3px;">
+    <tr>
+      <td style="border:1px solid #000;padding:6px 10px;width:22%;text-align:center;">
+        <span class="pw-logo-ema">ema</span><span class="pw-logo-vias">vias</span>
+      </td>
+      <td style="border:1px solid #000;text-align:center;font-weight:bold;font-size:11pt;padding:6px;">
+        REGISTRO<br><span style="font-size:9pt;font-weight:normal;">FORMULARIO DE COTIZACIÓN PARA TERCEROS</span>
+      </td>
+      <td style="border:1px solid #000;padding:5px 8px;width:22%;font-size:8.5pt;vertical-align:top;">
+        CÓDIGO: UCO.P01.R03<br>VERSIÓN: 2
+      </td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #000;padding:3px 8px;font-weight:bold;color:#c0392b;font-size:10pt;">ORIGINAL</td>
+      <td style="border:1px solid #000;"></td>
+      <td style="border:1px solid #000;padding:3px 8px;font-weight:bold;text-align:right;font-size:12pt;">${escHtml(d.nro||'')}</td>
+    </tr>
+  </table>
+
+  <table style="margin-bottom:3px;">
+    <tr><td colspan="4" class="section-title">DATOS DEL CLIENTE</td></tr>
+    <tr>
+      <td class="label-cell" style="border:1px solid #000;padding:3px 6px;width:20%;">EMPRESA</td>
+      <td style="border:1px solid #000;padding:3px 6px;" colspan="3">${escHtml(d.empresa||'')}</td>
+    </tr>
+    <tr>
+      <td class="label-cell" style="border:1px solid #000;padding:3px 6px;">DIRECCIÓN</td>
+      <td style="border:1px solid #000;padding:3px 6px;" colspan="3">${escHtml(d.direccion||'')}</td>
+    </tr>
+    <tr>
+      <td class="label-cell" style="border:1px solid #000;padding:3px 6px;">SOLICITANTE</td>
+      <td style="border:1px solid #000;padding:3px 6px;" colspan="3">${escHtml(d.solicitante||'')}</td>
+    </tr>
+    <tr>
+      <td class="label-cell" style="border:1px solid #000;padding:3px 6px;">TELF./CEL</td>
+      <td style="border:1px solid #000;padding:3px 6px;width:28%;">${escHtml(String(d.telf||''))}</td>
+      <td class="label-cell" style="border:1px solid #000;padding:3px 6px;width:12%;">E-MAIL</td>
+      <td style="border:1px solid #000;padding:3px 6px;">${escHtml(d.email||'')}</td>
+    </tr>
+    <tr>
+      <td class="label-cell" style="border:1px solid #000;padding:3px 6px;">NIT</td>
+      <td style="border:1px solid #000;padding:3px 6px;">${escHtml(String(d.nit||''))}</td>
+      <td colspan="2" style="border:1px solid #000;padding:3px 6px;font-size:7.5pt;"><strong>NOTA:</strong> PARA SU FACTURA COMUNICARSE CON EL N° 2301292 - 94 - 45 int. 142</td>
+    </tr>
+  </table>
+
+  <table style="margin-bottom:3px;">
+    <tr><td colspan="6" class="section-title">DESCRIPCIÓN DE LO SOLICITADO</td></tr>
+    <tr>
+      <th class="items-th" style="border:1px solid #000;width:4%;">N°</th>
+      <th class="items-th" style="border:1px solid #000;width:50%;">ÍTEM</th>
+      <th class="items-th" style="border:1px solid #000;width:8%;">UNIDAD</th>
+      <th class="items-th" style="border:1px solid #000;width:10%;">CANTIDAD</th>
+      <th class="items-th" style="border:1px solid #000;width:12%;">P.U.</th>
+      <th class="items-th" style="border:1px solid #000;width:16%;">PRECIO (Bs.)</th>
+    </tr>
+    ${rows}
+    ${pct>0?`<tr><td colspan="6" style="border:1px solid #000;padding:3px 6px;font-size:7.5pt;color:#666;font-style:italic;">
+      * Los precios unitarios incluyen un ${pct}% adicional aplicado sobre el P.U. base del catálogo EMAVIAS.
+    </td></tr>`:''}
+    <tr class="total-row">
+      <td colspan="5" style="border:1px solid #000;padding:4px 6px;font-weight:bold;text-align:right;">PRECIO TOTAL Bs. (NUMERAL):</td>
+      <td style="border:1px solid #000;padding:4px 6px;text-align:right;font-size:11pt;font-weight:900;">${fmtN(total)}</td>
+    </tr>
+    <tr>
+      <td colspan="2" style="border:1px solid #000;padding:3px 6px;font-weight:bold;">PRECIO Bs. (LITERAL):</td>
+      <td colspan="4" style="border:1px solid #000;padding:3px 6px;font-style:italic;font-size:8pt;">${numLiteral(total)}</td>
+    </tr>
+  </table>
+
+  <table style="margin-bottom:3px;">
+    <tr>
+      <td rowspan="3" style="border:1px solid #000;padding:4px 6px;font-weight:bold;width:35%;vertical-align:middle;font-size:8.5pt;">
+        * PARA LA EJECUCIÓN DE LO SOLICITADO DEPOSITAR PREVIAMENTE EN:
+      </td>
+      <td style="border:1px solid #000;padding:3px 6px;font-weight:bold;width:28%;background:#f5f5f5;">ENTIDAD FINANCIERA</td>
+      <td style="border:1px solid #000;padding:3px 6px;">BANCO UNIÓN</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #000;padding:3px 6px;font-weight:bold;background:#f5f5f5;">CUENTA N° (BOLIVIANOS)</td>
+      <td style="border:1px solid #000;padding:3px 6px;">1 - 00 00 0 - 18 40 21 27</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #000;padding:3px 6px;font-weight:bold;background:#f5f5f5;">NOMBRE DE LA CUENTA</td>
+      <td style="border:1px solid #000;padding:3px 6px;">EMAVIAS - RECURSOS PROPIOS</td>
+    </tr>
+  </table>
+
+  <table style="margin-bottom:3px;">
+    <tr><td colspan="2" class="section-title">DATOS DE LA EJECUCIÓN</td></tr>
+    <tr>
+      <td class="label-cell" style="border:1px solid #000;padding:3px 6px;width:22%;vertical-align:top;font-size:8.5pt;">DIRECCIÓN<br>OBRA</td>
+      <td style="border:1px solid #000;padding:3px 6px;">${escHtml(d.dirObra||'')}</td>
+    </tr>
+    <tr>
+      <td class="label-cell" style="border:1px solid #000;padding:3px 6px;font-size:8.5pt;">FECHA TENTATIVA</td>
+      <td style="border:1px solid #000;padding:3px 6px;font-weight:bold;font-style:italic;font-size:8pt;">${escHtml(d.fechaTentativa||FECHA_TENT_DEFAULT)}</td>
+    </tr>
+    <tr>
+      <td class="label-cell" style="border:1px solid #000;padding:3px 6px;vertical-align:top;font-size:8.5pt;">OBSERVACIONES Y/O<br>RECOMENDACIONES</td>
+      <td class="obs-cell" style="border:1px solid #000;padding:3px 6px;">${obs}</td>
+    </tr>
+  </table>
+
+  <table style="margin-bottom:8px;">
+    <tr><td colspan="4" class="section-title">OTROS</td></tr>
+    <tr>
+      <td class="label-cell" style="border:1px solid #000;padding:3px 6px;width:32%;font-size:8.5pt;">* VIGENCIA DE LA COTIZACIÓN</td>
+      <td style="border:1px solid #000;padding:3px 6px;"><strong>${escHtml(String(d.vigencia||'30'))}</strong> días calendario</td>
+      <td class="label-cell" style="border:1px solid #000;padding:3px 6px;width:20%;font-size:8.5pt;">FECHA DE EMISIÓN</td>
+      <td style="border:1px solid #000;padding:3px 6px;">${formatDate(d.fechaEmision)}</td>
+    </tr>
+  </table>
+
+  <div class="sign-area" style="justify-content:center;">
+    <div class="sign-block"><div class="sign-line">Vo. Bo. GERENTE TÉCNICO</div></div>
+  </div>`;
+
+  document.body.classList.add('printing');
+  window.print();
+  document.body.classList.remove('printing');
+}
+
+// ============================================================
+// EXPORT
+// ============================================================
+function doExport(){
+  const data=DB.get('cotizaciones_ext');
+  if(!data.length){ alert('No hay cotizaciones para exportar.'); return; }
+  exportXLSX(data.map(d=>({
+    'N° Cotización':d.nro,
+    'Fecha Emisión':d.fechaEmision,
+    'Empresa':d.empresa,
+    'Solicitante':d.solicitante,
+    'Telf.':d.telf,
+    'Email':d.email,
+    'NIT':d.nit,
+    'Nro. Ítems':(d.items||[]).length,
+    'Total (Bs.)':d.total,
+    'Dirección Obra':d.dirObra,
+    'Vigencia (días)':d.vigencia,
+    'Estado':d.estado,
+  })),'cotizaciones_externos');
+}
+
+// ============================================================
+// IMPORT
+// ============================================================
+function triggerImport(){ document.getElementById('fileImport').click(); }
+
+function handleImport(inp){
+  if(!inp.files[0]) return;
+  const file=inp.files[0]; inp.value='';
+  const name=file.name.toLowerCase();
+  const isCsv=name.endsWith('.csv');
+
+  _xlsxReady(function(){
+    const reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        let wb;
+        if(isCsv) wb=XLSX.read(e.target.result,{type:'string'});
+        else wb=XLSX.read(e.target.result,{type:'binary',cellDates:true,bookVBA:false});
+
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
+        if(!rows||rows.length<2){ alert('El archivo está vacío o no tiene datos.'); return; }
+
+        // Detectar encabezados (primera fila no vacía)
+        let headerRow=0;
+        for(let i=0;i<Math.min(5,rows.length);i++){
+          if(rows[i].some(c=>String(c||'').trim()!='')){ headerRow=i; break; }
+        }
+        const headers=rows[headerRow].map(h=>String(h||'').trim().toUpperCase());
+
+        function col(names){
+          for(const n of names){
+            const idx=headers.findIndex(h=>h.includes(n.toUpperCase()));
+            if(idx>=0) return idx;
+          }
+          return -1;
+        }
+
+        // Mapeo flexible de columnas
+        const iNro      = col(['N° COT','NRO','COTIZ','NÚMERO']);
+        const iFecha    = col(['FECHA EMIS','FECHA']);
+        const iEmpresa  = col(['EMPRESA','CLIENTE']);
+        const iSolic    = col(['SOLICITANTE','SOLICIT']);
+        const iTelf     = col(['TELF','CEL','TELEF']);
+        const iEmail    = col(['EMAIL','CORREO','E-MAIL']);
+        const iNit      = col(['NIT']);
+        const iTotal    = col(['TOTAL','MONTO']);
+        const iDirObra  = col(['DIRECCIÓN OBRA','DIR OBRA','OBRA','DIRECCION OBRA']);
+        const iVigencia = col(['VIGENCIA']);
+        const iEstado   = col(['ESTADO']);
+        const iDireccion= col(['DIRECCIÓN','DIRECCION','DIR']);
+
+        const estadosValidos=['Pendiente','Aprobada','Rechazada','Ejecutada'];
+        const existing=DB.get('cotizaciones_ext');
+        const existingNros=new Set(existing.map(d=>String(d.nro||'').trim()));
+
+        let added=0, skipped=0, duplicates=0;
+        const newRecs=[];
+
+        for(let i=headerRow+1;i<rows.length;i++){
+          const r=rows[i];
+          if(!r||r.every(c=>String(c||'').trim()==='')) continue; // fila vacía
+
+          const empresa=String(r[iEmpresa]||'').trim();
+          if(!empresa){ skipped++; continue; } // sin empresa → ignorar
+
+          // N° de cotización
+          let nro='';
+          if(iNro>=0 && r[iNro]){
+            nro=String(r[iNro]).trim();
+          } else {
+            const nextId=DB.nextId('cotizaciones_ext')+(existing.length+newRecs.length);
+            nro=String(nextId).padStart(3,'0')+'/'+new Date().getFullYear();
+          }
+
+          // Evitar duplicados por N°
+          if(existingNros.has(nro)){ duplicates++; continue; }
+          existingNros.add(nro);
+
+          // Fecha
+          let fecha='';
+          if(iFecha>=0 && r[iFecha]){
+            const v=r[iFecha];
+            if(v instanceof Date) fecha=v.toISOString().slice(0,10);
+            else if(typeof v==='number'){ const ms=(v-25569)*86400000; fecha=new Date(ms).toISOString().slice(0,10); }
+            else fecha=String(v).trim().slice(0,10);
+          }
+          if(!fecha) fecha=new Date().toISOString().slice(0,10);
+
+          // Estado
+          let estado='Pendiente';
+          if(iEstado>=0 && r[iEstado]){
+            const sv=String(r[iEstado]).trim();
+            estado=estadosValidos.find(e=>e.toLowerCase()===sv.toLowerCase())||'Pendiente';
+          }
+
+          // Total
+          let total=0;
+          if(iTotal>=0 && r[iTotal]){
+            const tv=parseFloat(String(r[iTotal]).replace(/[,\s]/g,'').replace(',','.'));
+            if(!isNaN(tv)) total=tv;
+          }
+
+          const id=DB.nextId('cotizaciones_ext')+(existing.length+newRecs.length);
+          newRecs.push({
+            id,
+            nro,
+            empresa,
+            direccion:   iDireccion>=0 ? String(r[iDireccion]||'').trim() : '',
+            solicitante: iSolic>=0     ? String(r[iSolic]||'').trim()     : '',
+            telf:        iTelf>=0      ? String(r[iTelf]||'').trim()       : '',
+            email:       iEmail>=0     ? String(r[iEmail]||'').trim()      : '',
+            nit:         iNit>=0       ? String(r[iNit]||'').trim()        : '',
+            items:       [],
+            subtotal:    total,
+            porcentaje:  10,
+            total,
+            dirObra:     iDirObra>=0   ? String(r[iDirObra]||'').trim()   : '',
+            fechaTentativa: '',
+            observaciones:  OBS_DEFAULT,
+            vigencia:    iVigencia>=0  ? String(r[iVigencia]||'').trim()  : '30',
+            fechaEmision: fecha,
+            estado,
+          });
+          added++;
+        }
+
+        if(!newRecs.length && !duplicates){
+          alert('No se encontraron registros válidos para importar. Verifique que el archivo tenga una columna "Empresa".');
+          return;
+        }
+
+        DB.set('cotizaciones_ext',[...existing,...newRecs]);
+        renderStats();
+        renderTable();
+
+        let msg=`✅ Importación completada:\n• ${added} cotización${added!==1?'es':''} importada${added!==1?'s':''}.`;
+        if(duplicates) msg+=`\n• ${duplicates} omitida${duplicates!==1?'s':''} (N° ya existe).`;
+        if(skipped)    msg+=`\n• ${skipped} fila${skipped!==1?'s':''} sin empresa (ignorada${skipped!==1?'s':''}).`;
+        if(added)      msg+='\n\nAbra cada cotización importada para completar o revisar sus ítems.';
+        alert(msg);
+
+      }catch(err){
+        console.error('Import error:',err);
+        alert('Error al procesar el archivo: '+err.message);
+      }
+    };
+    if(isCsv) reader.readAsText(file,'UTF-8');
+    else reader.readAsBinaryString(file);
+  });
+}
+
+// Init
+renderStats();
+renderTable();
+</script>
+</body>
+</html>

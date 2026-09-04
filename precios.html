@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMAVIAS - Precios y Tarifas GAMLP</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.act-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:24px;}
+.act-card{background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:12px;transition:box-shadow .2s;}
+.act-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1);}
+.act-card-header{display:flex;align-items:center;gap:10px;}
+.act-card-icon{font-size:28px;line-height:1;}
+.act-card-title{font-size:15px;font-weight:700;color:#1a1a2e;flex:1;}
+.act-card-badge{font-size:11px;background:#e3f2fd;color:#1565c0;border:1px solid #90caf9;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.act-card-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:#666;}
+.act-card-meta span{display:flex;align-items:center;gap:4px;}
+.act-card-actions{display:flex;gap:8px;margin-top:4px;}
+.act-card-actions .btn{flex:1;font-size:12px;}
+.act-card.card-empty{border:2px dashed #e0e0e0;background:#fafafa;justify-content:center;align-items:center;min-height:120px;text-align:center;cursor:pointer;}
+.act-card.card-empty:hover{border-color:#8B1A1A;background:#fff5f5;}
+.act-card.card-empty .empty-icon{font-size:32px;margin-bottom:8px;}
+.act-card.card-empty .empty-label{font-size:13px;color:#888;}
+
+/* Modal ítems */
+#modalItems .modal{max-width:900px;width:95vw;max-height:90vh;display:flex;flex-direction:column;}
+#modalItems .modal-body{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:12px;}
+.items-search{display:flex;gap:10px;align-items:center;}
+.items-search input{flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;}
+.items-table-wrap{flex:1;overflow-y:auto;border:1px solid #e8e8e8;border-radius:6px;}
+.items-table-wrap table{width:100%;border-collapse:collapse;font-size:13px;}
+.items-table-wrap th{position:sticky;top:0;background:#f0f0f0 !important;color:#333 !important;padding:8px 10px;text-align:left;font-weight:700;font-size:12px;border-bottom:2px solid #ccc;z-index:2;}
+.items-table-wrap td{padding:7px 10px;border-bottom:1px solid #f0f0f0;}
+.items-table-wrap tr:hover td{background:#fafafa;}
+.items-pag{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.items-pag .page-btn{min-width:32px;height:32px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;font-size:12px;}
+.items-pag .page-btn.active{background:#8B1A1A;color:#fff;border-color:#8B1A1A;}
+.items-count{font-size:12px;color:#666;margin-left:auto;}
+</style>
+</head>
+<body>
+<div id="sidebarContainer"></div>
+<div class="main-content">
+  <div id="topbarContainer"></div>
+  <div class="page-content">
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb"><span>EMAVIAS</span><span class="breadcrumb-sep">›</span><span>Precios GAMLP</span></div>
+        <div class="page-title">💲 Precios y Tarifas GAMLP</div>
+        <div class="page-subtitle">Precios de referencia aprobados por el GAMLP — agrupados por actualización</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-outline btn-sm" onclick="triggerImport()">📥 Importar CSV</button>
+      </div>
+    </div>
+
+    <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#856404;">
+      <strong>📌 Nota:</strong> Los precios están agrupados por actualización. Haga clic en <strong>Ver Ítems</strong> para explorar los precios de cada resolución. Importe un CSV para cargar una nueva actualización.
+    </div>
+
+    <div class="stats-grid" id="statsGrid" style="margin-bottom:20px;"></div>
+
+    <!-- Tarjetas de actualizaciones -->
+    <div class="act-grid" id="actGrid"></div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Ver Ítems de una Actualización ══ -->
+<div id="modalItems" style="display:none;" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="itemsModalTitle">Ítems</span>
+      <button class="modal-close" onclick="closeItems()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="items-search">
+        <input type="text" id="itemsSearch" placeholder="🔍 Buscar código, descripción, categoría..." oninput="renderItems()">
+        <select id="itemsCatFilt" class="filter-control" style="min-width:140px;" onchange="renderItems()">
+          <option value="">Todas las categorías</option>
+        </select>
+        <button class="btn btn-success btn-sm" onclick="exportCurrentAct()">📗 Exportar</button>
+      </div>
+      <div class="items-table-wrap">
+        <table>
+          <thead><tr>
+            <th style="width:140px;color:#333;background:#f0f0f0;">Código</th>
+            <th style="color:#333;background:#f0f0f0;">Descripción</th>
+            <th style="width:80px;color:#333;background:#f0f0f0;">Categoría</th>
+            <th style="width:60px;color:#333;background:#f0f0f0;">Unidad</th>
+            <th style="width:110px;text-align:right;color:#333;background:#f0f0f0;">Precio (Bs)</th>
+            <th style="width:80px;color:#333;background:#f0f0f0;">Estado</th>
+            <th style="width:80px;text-align:center;color:#333;background:#f0f0f0;">Acciones</th>
+          </tr></thead>
+          <tbody id="itemsBody"></tbody>
+        </table>
+      </div>
+      <div class="items-pag" id="itemsPag"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Nuevo/Editar Precio ══ -->
+<div id="modalForm" style="display:none;" class="modal-overlay">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header">
+      <span class="modal-title" id="modalFormTitle">Nuevo Precio / Tarifa</span>
+      <button class="modal-close" onclick="closeForm()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Código</label>
+          <input type="text" id="f_codigo" class="form-control" placeholder="GM-ARQ-ACA-0167">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Actualización <span style="color:red">*</span></label>
+          <input type="text" id="f_actualizacion" class="form-control" placeholder="1era Actualización 2026" list="actList" required>
+          <datalist id="actList"></datalist>
+        </div>
+        <div class="form-group form-full">
+          <label class="form-label">Descripción <span style="color:red">*</span></label>
+          <input type="text" id="f_desc" class="form-control" placeholder="Descripción detallada del ítem" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoría</label>
+          <input type="text" id="f_cat" class="form-control" placeholder="ARQ, VIA, EST..." list="catList">
+          <datalist id="catList"></datalist>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unidad <span style="color:red">*</span></label>
+          <select id="f_unid" class="form-control" required>
+            <option>m2</option><option>m3</option><option>ml</option><option>ton</option><option>pza</option><option>glb</option><option>M2</option><option>M3</option><option>ML</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Precio GAMLP (Bs) <span style="color:red">*</span></label>
+          <input type="number" id="f_precio" class="form-control" step="0.01" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha de Vigencia</label>
+          <input type="date" id="f_vigencia" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">N° Resolución</label>
+          <input type="text" id="f_resolucion" class="form-control" placeholder="Res. 001/2026">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <select id="f_estado" class="form-control"><option>Vigente</option><option>Desactualizado</option></select>
+        </div>
+        <div class="form-group form-full">
+          <label class="form-label">Observaciones</label>
+          <textarea id="f_obs" class="form-control" rows="2"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeForm()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveRecord()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Importar CSV ══ -->
+<div id="modalImport" style="display:none;" class="modal-overlay">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <span class="modal-title">📥 Importar Actualización GAMLP</span>
+      <button class="modal-close" onclick="closeImportModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin:0 0 4px;font-size:13px;color:#555;">Archivo: <strong id="importFileName">—</strong></p>
+      <p style="margin:0 0 14px;font-size:12px;color:#888;" id="importPreviewCount"></p>
+      <div class="form-group">
+        <label class="form-label">Nombre de la Actualización <span style="color:red">*</span></label>
+        <input type="text" id="imp_actualizacion" class="form-control" placeholder="Ej: 1era Actualización 2026" list="impActList">
+        <datalist id="impActList"></datalist>
+        <small style="color:#888;font-size:11px;">Si ya existe esta actualización, sus datos serán reemplazados.</small>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Resolución / Referencia (opcional)</label>
+        <input type="text" id="imp_resolucion" class="form-control" placeholder="Res. 001/2026">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha de Vigencia</label>
+        <input type="date" id="imp_vigencia" class="form-control">
+      </div>
+      <div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:6px;padding:10px;font-size:12px;color:#2e7d32;">
+        <strong>Formato CSV esperado</strong> (separado por <code>;</code>):<br>
+        <code>NRO ; CÓDIGO ; DESCRIPCIÓN ; UNIDAD ; PRECIO UNITARIO</code><br>
+        Los precios pueden usar punto como miles: <code>1.451</code> = 1,451 Bs.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeImportModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmImport()">📥 Importar</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileImport" accept=".csv" style="display:none" onchange="handleImportFile(this)">
+
+<script src="js/app.js"></script>
+<script>
+AUTH.require();
+document.getElementById('sidebarContainer').innerHTML = renderSidebar('precios');
+document.getElementById('topbarContainer').innerHTML = renderTopbar('Precios y Tarifas GAMLP','Tabla de Precios Unitarios de Referencia');
+
+const COLS=[
+  {key:'codigo',label:'Codigo'},{key:'actualizacion',label:'Actualizacion'},
+  {key:'categoria',label:'Categoria'},{key:'descripcion',label:'Descripcion'},
+  {key:'unidad',label:'Unidad'},{key:'precio',label:'Precio GAMLP Bs'},
+  {key:'vigencia',label:'Fecha Vigencia'},{key:'resolucion',label:'Resolucion'},
+  {key:'estado',label:'Estado'},{key:'observaciones',label:'Observaciones'}
+];
+
+let editId=null;
+let _pendingFile=null, _pendingParsed=[];
+let _curAct=null, _itemsPage=1;
+const ITEMS_PER_PAGE=25;
+
+/* ─── Helpers ─── */
+function catFromCodigo(code){
+  if(!code) return '';
+  const m=String(code).match(/^GM-([A-Z]{2,6})-/i);
+  return m?m[1].toUpperCase():'';
+}
+
+function parsePrecioBoliviano(val){
+  if(val===''||val===null||val===undefined) return 0;
+  const s=String(val).trim().replace(/\s/g,'');
+  if(!s) return 0;
+  if(s.includes(',')){
+    // formato europeo/boliviano: 1.234,56
+    return parseFloat(s.replace(/\./g,'').replace(',','.'))||0;
+  }
+  // Solo puntos: si el grupo después del último punto tiene 3 dígitos → miles
+  const parts=s.split('.');
+  if(parts.length>1 && parts[parts.length-1].length===3){
+    return parseFloat(s.replace(/\./g,''))||0;
+  }
+  return parseFloat(s)||0;
+}
+
+function parseCSVText(text){
+  // Quitar BOM
+  const clean=text.replace(/^﻿/,'');
+  const lines=clean.split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2) return [];
+  const sep=lines[0].includes(';')?';':',';
+  const header=lines[0].split(sep).map(h=>h.trim().toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,''));
+  const iCod  = header.findIndex(h=>h.includes('codigo')||h.includes('código'));
+  const iDesc = header.findIndex(h=>h.includes('descripcion')||h.includes('descripci'));
+  const iUnid = header.findIndex(h=>h.includes('unidad'));
+  const iPrecio= header.findIndex(h=>h.includes('precio'));
+  if(iDesc<0||iPrecio<0) return null; // columnas no encontradas
+  const records=[];
+  for(let i=1;i<lines.length;i++){
+    const cols=lines[i].split(sep);
+    const descripcion=(cols[iDesc]||'').trim();
+    if(!descripcion) continue;
+    const codigo=iCod>=0?(cols[iCod]||'').trim():'';
+    const unidad =iUnid>=0?(cols[iUnid]||'').trim():'m2';
+    const precio =parsePrecioBoliviano(cols[iPrecio]||'0');
+    const categoria=catFromCodigo(codigo);
+    records.push({codigo,descripcion,unidad:unidad||'m2',precio,categoria});
+  }
+  return records;
+}
+
+/* ─── Datos agrupados ─── */
+function getGroups(){
+  const data=DB.get('precios_gamlp');
+  const map={};
+  data.forEach(p=>{
+    const key=p.actualizacion||'Sin Actualización';
+    if(!map[key]){
+      map[key]={
+        nombre:key,
+        items:[],
+        resolucion:p.resolucion||'',
+        vigencia:p.vigencia||''
+      };
+    }
+    map[key].items.push(p);
+    if(!map[key].resolucion && p.resolucion) map[key].resolucion=p.resolucion;
+    if(!map[key].vigencia && p.vigencia) map[key].vigencia=p.vigencia;
+  });
+  // Ordenar: 1era, 2da, 3era... por nombre
+  return Object.values(map).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+}
+
+/* ─── Stats ─── */
+function renderStats(){
+  const data=DB.get('precios_gamlp');
+  const groups=getGroups();
+  const vigentes=data.filter(p=>p.estado==='Vigente'||!p.estado).length;
+  const avgPrecio=data.length?data.reduce((s,p)=>s+(Number(p.precio)||0),0)/data.length:0;
+  document.getElementById('statsGrid').innerHTML=`
+    <div class="stat-card"><div class="stat-icon red">💲</div><div><div class="stat-value">${data.length.toLocaleString()}</div><div class="stat-label">Total Ítems</div></div></div>
+    <div class="stat-card"><div class="stat-icon blue">📅</div><div><div class="stat-value">${groups.length}</div><div class="stat-label">Actualizaciones</div></div></div>
+    <div class="stat-card"><div class="stat-icon green">✅</div><div><div class="stat-value">${vigentes.toLocaleString()}</div><div class="stat-label">Ítems Vigentes</div></div></div>
+    <div class="stat-card"><div class="stat-icon orange">📊</div><div><div class="stat-value">${formatCurrency(avgPrecio)}</div><div class="stat-label">Precio Promedio</div></div></div>`;
+}
+
+/* ─── Tarjetas de actualización ─── */
+const ACT_COLORS=['#1565c0','#2e7d32','#6a1b9a','#e65100','#00695c','#c62828','#283593','#4e342e'];
+function actColor(idx){return ACT_COLORS[idx%ACT_COLORS.length];}
+
+function renderActGrid(){
+  const groups=getGroups();
+  const data=DB.get('precios_gamlp');
+  // Update datalists
+  const acts=groups.map(g=>g.nombre);
+  const cats=[...new Set(data.map(p=>p.categoria).filter(Boolean))].sort();
+  document.getElementById('actList').innerHTML=acts.map(a=>`<option value="${escHtml(a)}">`).join('');
+  document.getElementById('catList').innerHTML=cats.map(c=>`<option value="${escHtml(c)}">`).join('');
+  document.getElementById('impActList').innerHTML=acts.map(a=>`<option value="${escHtml(a)}">`).join('');
+
+  let html='';
+  groups.forEach((g,idx)=>{
+    const col=actColor(idx);
+    const cats2=[...new Set(g.items.map(p=>p.categoria).filter(Boolean))];
+    const vigentes=g.items.filter(p=>p.estado==='Vigente'||!p.estado).length;
+    html+=`<div class="act-card">
+      <div class="act-card-header">
+        <div class="act-card-icon">📅</div>
+        <div class="act-card-title" style="color:${col};">${escHtml(g.nombre)}</div>
+        <span class="act-card-badge" style="background:${col}18;color:${col};border-color:${col}44;">${g.items.length.toLocaleString()} ítems</span>
+      </div>
+      <div class="act-card-meta">
+        ${g.resolucion?`<span>📄 ${escHtml(g.resolucion)}</span>`:''}
+        ${g.vigencia?`<span>🗓️ ${formatDate(g.vigencia)}</span>`:''}
+        <span>✅ ${vigentes.toLocaleString()} vigentes</span>
+        ${cats2.length?`<span>📂 ${cats2.length} categorías</span>`:''}
+      </div>
+      <div class="act-card-actions">
+        <button class="btn btn-primary btn-sm" onclick="openItems('${escHtml(g.nombre).replace(/'/g,"\\'")}')">🔍 Ver Ítems</button>
+        <button class="btn btn-outline btn-sm" onclick="exportAct('${escHtml(g.nombre).replace(/'/g,"\\'")}')">📗 Exportar</button>
+        <button class="btn btn-danger btn-sm" style="min-width:90px;" onclick="deleteAct('${escHtml(g.nombre).replace(/'/g,"\\'")}',${g.items.length})">🗑️ Eliminar</button>
+      </div>
+    </div>`;
+  });
+  // Tarjeta "Importar nueva"
+  html+=`<div class="act-card card-empty" onclick="triggerImport()">
+    <div class="empty-icon">📥</div>
+    <div class="empty-label">Importar nueva actualización<br><small>Haga clic para cargar un CSV</small></div>
+  </div>`;
+  document.getElementById('actGrid').innerHTML=html;
+}
+
+/* ─── Modal: Ver ítems de una actualización ─── */
+function openItems(actNombre){
+  _curAct=actNombre;
+  _itemsPage=1;
+  document.getElementById('itemsModalTitle').textContent='📅 '+actNombre;
+  document.getElementById('itemsSearch').value='';
+  // Poblar filtro de categorías para esta actualización
+  const data=DB.get('precios_gamlp').filter(p=>(p.actualizacion||'Sin Actualización')===actNombre);
+  const cats=[...new Set(data.map(p=>p.categoria).filter(Boolean))].sort();
+  document.getElementById('itemsCatFilt').innerHTML=
+    '<option value="">Todas las categorías</option>'+cats.map(c=>`<option>${escHtml(c)}</option>`).join('');
+  document.getElementById('modalItems').style.display='flex';
+  renderItems();
+}
+function closeItems(){document.getElementById('modalItems').style.display='none';_curAct=null;}
+
+function getItemsData(){
+  if(!_curAct) return [];
+  let d=DB.get('precios_gamlp').filter(p=>(p.actualizacion||'Sin Actualización')===_curAct);
+  const q=document.getElementById('itemsSearch').value.trim();
+  const fc=document.getElementById('itemsCatFilt').value;
+  if(q){const ql=q.toLowerCase();d=d.filter(p=>(p.codigo||'').toLowerCase().includes(ql)||(p.descripcion||'').toLowerCase().includes(ql)||(p.categoria||'').toLowerCase().includes(ql));}
+  if(fc) d=d.filter(p=>p.categoria===fc);
+  return d;
+}
+
+function renderItems(){
+  const data=getItemsData();
+  const total=data.length;
+  const pages=Math.max(1,Math.ceil(total/ITEMS_PER_PAGE));
+  if(_itemsPage>pages) _itemsPage=1;
+  const slice=data.slice((_itemsPage-1)*ITEMS_PER_PAGE,_itemsPage*ITEMS_PER_PAGE);
+  document.getElementById('itemsBody').innerHTML=slice.length?slice.map(p=>`<tr>
+    <td style="font-size:11px;font-family:monospace;color:#8B1A1A;">${escHtml(p.codigo||'—')}</td>
+    <td style="max-width:300px;" title="${escHtml(p.descripcion||'')}">${escHtml(p.descripcion||'—')}</td>
+    <td><span class="badge badge-secondary" style="font-size:10px;">${escHtml(p.categoria||'—')}</span></td>
+    <td style="text-align:center;">${escHtml(p.unidad||'m2')}</td>
+    <td style="text-align:right;font-weight:800;color:#1a1a2e;">${formatCurrency(p.precio)}</td>
+    <td><span class="badge ${p.estado==='Vigente'||!p.estado?'badge-success':'badge-secondary'}">${escHtml(p.estado||'Vigente')}</span></td>
+    <td style="text-align:center;"><div class="table-actions" style="justify-content:center;">
+      <button class="btn btn-info btn-sm btn-icon" onclick="openFormFromItems(${Number(p.id)})" title="Editar">✏️</button>
+      <button class="btn btn-danger btn-sm btn-icon" onclick="deleteRecFromItems(${Number(p.id)})" title="Eliminar">🗑️</button>
+    </div></td>
+  </tr>`).join(''):`<tr><td colspan="7" style="text-align:center;padding:24px;color:#999;">Sin resultados para la búsqueda</td></tr>`;
+
+  // Paginación
+  let pg='';
+  if(pages>1){
+    if(_itemsPage>1) pg+=`<button class="page-btn" onclick="goItemsPage(${_itemsPage-1})">‹</button>`;
+    const start=Math.max(1,_itemsPage-3),end=Math.min(pages,_itemsPage+3);
+    if(start>1) pg+=`<button class="page-btn" onclick="goItemsPage(1)">1</button>${start>2?'<span style="padding:0 4px">…</span>':''}`;
+    for(let i=start;i<=end;i++) pg+=`<button class="page-btn${i===_itemsPage?' active':''}" onclick="goItemsPage(${i})">${i}</button>`;
+    if(end<pages) pg+=`${end<pages-1?'<span style="padding:0 4px">…</span>':''}<button class="page-btn" onclick="goItemsPage(${pages})">${pages}</button>`;
+    if(_itemsPage<pages) pg+=`<button class="page-btn" onclick="goItemsPage(${_itemsPage+1})">›</button>`;
+  }
+  pg+=`<span class="items-count">${(_itemsPage-1)*ITEMS_PER_PAGE+1}–${Math.min(_itemsPage*ITEMS_PER_PAGE,total)} de ${total}</span>`;
+  document.getElementById('itemsPag').innerHTML=pg;
+}
+function goItemsPage(p){_itemsPage=p;renderItems();}
+
+function openFormFromItems(id){
+  closeItems();
+  openForm(id);
+}
+function deleteRecFromItems(id){
+  if(!confirm('¿Eliminar este ítem?')) return;
+  const data=DB.get('precios_gamlp');
+  const filtered=data.filter(p=>Number(p.id)!==Number(id));
+  try{
+    DB.set('precios_gamlp',filtered);
+    renderStats();renderActGrid();
+    // Re-abrir modal si quedan ítems de la actualización
+    if(_curAct){
+      const remaining=filtered.filter(p=>(p.actualizacion||'Sin Actualización')===_curAct);
+      if(remaining.length>0) openItems(_curAct);
+      else closeItems();
+    }
+    toast('Ítem eliminado','success');
+  }catch(e){toast('Error al guardar: '+e.message,'error');}
+}
+
+/* ─── Eliminar actualización ─── */
+function deleteAct(nombre,count){
+  if(!confirm(`¿Eliminar TODOS los ${count} ítems de "${nombre}"?\nEsta acción no se puede deshacer.`)) return;
+  try{
+    DB.set('precios_gamlp',DB.get('precios_gamlp').filter(p=>(p.actualizacion||'Sin Actualización')!==nombre));
+    renderStats();renderActGrid();
+    toast(`Actualización "${nombre}" eliminada`,'success');
+  }catch(e){toast('Error al guardar: '+e.message,'error');}
+}
+
+/* ─── Eliminar TODOS ─── */
+function deleteAll(){
+  const data=DB.get('precios_gamlp');
+  if(!data.length){toast('No hay precios registrados','error');return;}
+  if(!confirm(`¿Eliminar TODOS los ${data.length} precios de TODAS las actualizaciones?\n\nEsta acción NO se puede deshacer.`)) return;
+  try{
+    DB.set('precios_gamlp',[]);
+    renderStats();renderActGrid();
+    toast('Todos los precios eliminados','success');
+  }catch(e){toast('Error al guardar: '+e.message,'error');}
+}
+
+/* ─── Exportar ─── */
+function exportAct(nombre){
+  const data=DB.get('precios_gamlp').filter(p=>(p.actualizacion||'Sin Actualización')===nombre);
+  const safe=nombre.replace(/[^a-zA-Z0-9_\- ]/g,'').replace(/\s+/g,'_').substring(0,30);
+  exportXLSX(data,'Precios GAMLP — '+nombre,'Precios_'+safe+'.xlsx',COLS);
+}
+function exportCurrentAct(){if(_curAct) exportAct(_curAct);}
+function doExport(){
+  const data=DB.get('precios_gamlp');
+  exportXLSX(data,'Precios y Tarifas GAMLP','Precios_GAMLP_'+new Date().toISOString().slice(0,10)+'.xlsx',COLS);
+}
+
+/* ─── Form nuevo/editar precio ─── */
+function openForm(id=null){
+  editId=id;
+  document.getElementById('modalFormTitle').textContent=id?'Editar Ítem':'Nuevo Precio / Tarifa';
+  if(id){
+    const p=DB.get('precios_gamlp').find(x=>Number(x.id)===Number(id));
+    if(p){
+      document.getElementById('f_codigo').value=p.codigo||'';
+      document.getElementById('f_actualizacion').value=p.actualizacion||'';
+      document.getElementById('f_cat').value=p.categoria||'';
+      document.getElementById('f_desc').value=p.descripcion||'';
+      document.getElementById('f_unid').value=p.unidad||'m2';
+      document.getElementById('f_precio').value=p.precio||'';
+      document.getElementById('f_vigencia').value=p.vigencia||'';
+      document.getElementById('f_resolucion').value=p.resolucion||'';
+      document.getElementById('f_estado').value=p.estado||'Vigente';
+      document.getElementById('f_obs').value=p.observaciones||'';
+    }
+  } else {
+    ['f_codigo','f_desc','f_cat','f_resolucion','f_obs'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('f_actualizacion').value=_curAct||'';
+    document.getElementById('f_unid').value='m2';
+    document.getElementById('f_precio').value='';
+    document.getElementById('f_vigencia').value=today();
+    document.getElementById('f_estado').value='Vigente';
+  }
+  document.getElementById('modalForm').style.display='flex';
+}
+function closeForm(){document.getElementById('modalForm').style.display='none';editId=null;}
+
+function saveRecord(){
+  const rec={
+    id:editId?Number(editId):DB.nextId('precios_gamlp'),
+    codigo:document.getElementById('f_codigo').value.trim(),
+    actualizacion:document.getElementById('f_actualizacion').value.trim(),
+    categoria:document.getElementById('f_cat').value.trim()||catFromCodigo(document.getElementById('f_codigo').value.trim()),
+    descripcion:document.getElementById('f_desc').value.trim(),
+    unidad:document.getElementById('f_unid').value,
+    precio:parseFloat(document.getElementById('f_precio').value)||0,
+    vigencia:document.getElementById('f_vigencia').value,
+    resolucion:document.getElementById('f_resolucion').value.trim(),
+    estado:document.getElementById('f_estado').value,
+    observaciones:document.getElementById('f_obs').value.trim()
+  };
+  if(!rec.descripcion||!rec.precio){toast('Complete los campos requeridos','error');return;}
+  let data=DB.get('precios_gamlp');
+  if(editId){data=data.map(p=>Number(p.id)===Number(editId)?rec:p);}else{data.push(rec);}
+  try{
+    DB.set('precios_gamlp',data);
+    closeForm();renderStats();renderActGrid();
+    toast('Precio guardado','success');
+  }catch(e){toast('Error al guardar: '+e.message,'error');}
+}
+
+/* ─── Importar CSV ─── */
+function triggerImport(){document.getElementById('fileImport').click();}
+
+function handleImportFile(inp){
+  const file=inp.files[0];
+  if(!file){return;}
+  _pendingFile=file;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    _pendingParsed=parseCSVText(e.target.result);
+    document.getElementById('importFileName').textContent=file.name;
+    if(_pendingParsed===null){
+      toast('No se encontraron columnas DESCRIPCIÓN o PRECIO UNITARIO en el CSV','error');
+      _pendingFile=null;_pendingParsed=[];
+      return;
+    }
+    document.getElementById('importPreviewCount').textContent=
+      `Se encontraron ${_pendingParsed.length} registros para importar.`;
+    // Auto-detectar nombre de actualización desde nombre de archivo
+    const fn=file.name;
+    let autoAct='';
+    const yearM=fn.match(/20\d{2}/);
+    const year=yearM?yearM[0]:'2026';
+    if(/1era|primera|1ra/i.test(fn)) autoAct=`1era Actualización ${year}`;
+    else if(/2da|segunda/i.test(fn)) autoAct=`2da Actualización ${year}`;
+    else if(/3era|tercera|3ra/i.test(fn)) autoAct=`3era Actualización ${year}`;
+    else if(/4ta|cuarta/i.test(fn)) autoAct=`4ta Actualización ${year}`;
+    document.getElementById('imp_actualizacion').value=autoAct;
+    document.getElementById('imp_resolucion').value='';
+    document.getElementById('imp_vigencia').value=today();
+    document.getElementById('modalImport').style.display='flex';
+  };
+  reader.readAsText(file,'UTF-8');
+  inp.value='';
+}
+
+function closeImportModal(){document.getElementById('modalImport').style.display='none';_pendingFile=null;_pendingParsed=[];}
+
+function confirmImport(){
+  const act=document.getElementById('imp_actualizacion').value.trim();
+  if(!act){toast('Ingrese el nombre de la actualización','error');return;}
+  if(!_pendingParsed||!_pendingParsed.length){toast('No hay registros para importar','error');return;}
+  const resolucion=document.getElementById('imp_resolucion').value.trim();
+  const vigencia=document.getElementById('imp_vigencia').value;
+  const existing=DB.get('precios_gamlp');
+  // Quitar ítems de esta actualización (reimportar limpio)
+  const base=existing.filter(p=>(p.actualizacion||'Sin Actualización')!==act);
+  let maxId=base.length?Math.max(...base.map(o=>Number(o.id)||0)):0;
+  const newRecords=_pendingParsed.map(r=>({
+    id:++maxId,
+    codigo:r.codigo,
+    actualizacion:act,
+    categoria:r.categoria||catFromCodigo(r.codigo),
+    descripcion:r.descripcion,
+    unidad:r.unidad||'m2',
+    precio:r.precio,
+    vigencia,
+    resolucion,
+    estado:'Vigente',
+    observaciones:''
+  }));
+  try{
+    DB.set('precios_gamlp',[...base,...newRecords]);
+    closeImportModal();renderStats();renderActGrid();
+    toast(`✅ ${newRecords.length} precios importados como "${act}"`,'success');
+  }catch(e){toast('Error al guardar (posible límite de almacenamiento): '+e.message,'error');}
+}
+
+/* ─── Init ─── */
+renderStats();
+renderActGrid();
+</script>
+</body>
+</html>
