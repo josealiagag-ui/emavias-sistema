@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMAVIAS - Registro de Obras</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.year-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px;margin-bottom:16px;}
+.year-card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #e8e8e8;overflow:hidden;transition:box-shadow .2s;}
+.year-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.13);}
+.year-card-header{background:linear-gradient(135deg,#8B1A1A,#6b1212);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;}
+.year-badge{font-size:30px;font-weight:900;letter-spacing:1px;}
+.year-card-acts{display:flex;gap:6px;}
+.year-card-acts button{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;transition:background .2s;white-space:nowrap;}
+.year-card-acts button:hover{background:rgba(255,255,255,.3);}
+.year-card-body{padding:14px 18px;}
+.year-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.year-metric{background:#f8f8f8;border-radius:8px;padding:9px 10px;text-align:center;}
+.year-metric-val{font-size:17px;font-weight:800;color:#8B1A1A;}
+.year-metric-lbl{font-size:10px;color:#888;margin-top:1px;text-transform:uppercase;letter-spacing:.3px;}
+.year-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px;}
+.year-card-footer{display:flex;justify-content:flex-end;padding:10px 18px;border-top:1px solid #f0f0f0;background:#fafafa;}
+/* Tarjeta importar */
+.import-card{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 20px;cursor:pointer;border:2.5px dashed #ccc !important;box-shadow:none !important;background:#fafafa;transition:border-color .2s,background .2s;}
+.import-card:hover{border-color:#8B1A1A !important;background:#fdf5f5;}
+.import-card-icon{font-size:2.8rem;margin-bottom:10px;color:#bbb;transition:color .2s;}
+.import-card:hover .import-card-icon{color:#8B1A1A;}
+.import-card-title{font-size:.95rem;font-weight:700;color:#999;transition:color .2s;}
+.import-card:hover .import-card-title{color:#8B1A1A;}
+.import-card-sub{font-size:.78rem;color:#bbb;margin-top:5px;transition:color .2s;}
+.import-card:hover .import-card-sub{color:#a04040;}
+/* Modal overlay */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.52);display:flex;align-items:flex-start;justify-content:center;z-index:1000;padding:20px;overflow-y:auto;}
+.modal-xl{background:#fff;border-radius:12px;width:100%;max-width:1100px;box-shadow:0 8px 32px rgba(0,0,0,.22);margin:auto;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:15px 20px;border-bottom:1px solid #eee;}
+.modal-title{font-size:15px;font-weight:700;color:#8B1A1A;}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#888;line-height:1;}
+.modal-body{padding:0;}
+.modal-filters{padding:12px 14px;border-bottom:1px solid #f0f0f0;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.items-table-wrap{max-height:430px;overflow-y:auto;}
+.items-table-wrap table{width:100%;border-collapse:collapse;}
+.items-table-wrap th{position:sticky;top:0;background:#f0f0f0 !important;color:#333 !important;font-size:12px;padding:9px 10px;text-align:left;border-bottom:2px solid #ddd;z-index:2;white-space:nowrap;}
+.items-table-wrap td{font-size:12px;padding:7px 10px;border-bottom:1px solid #f5f5f5;vertical-align:middle;}
+.items-table-wrap tr:hover td{background:#fafafa;}
+.modal-footer-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid #eee;background:#fafafa;flex-wrap:wrap;gap:8px;}
+/* Modal confirm */
+.modal{background:#fff;border-radius:12px;width:100%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,.22);}
+.modal .modal-header{padding:14px 18px;}
+.modal .modal-body{padding:16px 18px;}
+.modal .modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid #eee;}
+</style>
+</head>
+<body>
+<div id="sidebarContainer"></div>
+<div class="main-content">
+  <div id="topbarContainer"></div>
+  <div class="page-content">
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb"><span>EMAVIAS</span><span class="breadcrumb-sep">›</span><span>Registros</span><span class="breadcrumb-sep">›</span><span>Obras</span></div>
+        <div class="page-title">🏗️ Registro de Obras</div>
+        <div class="page-subtitle">Plan de Asfaltos 2025-2026 — EMAVIAS La Paz</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-outline btn-sm" onclick="triggerImport()">📥 Importar CSV</button>
+        <a href="form-obra.html" class="btn btn-primary btn-sm">➕ Nueva Obra</a>
+      </div>
+    </div>
+
+    <div class="stats-grid" id="totalesBar" style="margin-bottom:16px;"></div>
+    <div class="year-cards-grid" id="yearCardsGrid"></div>
+    <div id="emptyState" style="display:none;" class="card">
+      <div class="empty-state">
+        <div class="empty-icon">🏗️</div>
+        <div class="empty-title">Sin registros de obras</div>
+        <div class="empty-desc">Importe un CSV o cree una nueva obra para comenzar</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileImport" accept=".csv" style="display:none" onchange="handleImport(this)">
+
+<!-- Modal: Obras de un año -->
+<div id="modalObras" style="display:none;" class="modal-overlay" onclick="if(event.target===this)closeObrasModal()">
+  <div class="modal-xl">
+    <div class="modal-header">
+      <span class="modal-title" id="modalObrasTitle">Obras 2025</span>
+      <button class="modal-close" onclick="closeObrasModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-filters">
+        <div class="search-box" style="flex:1;min-width:180px;">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="modalSearch" placeholder="Buscar código, ubicación, zona..." oninput="renderModal()">
+        </div>
+        <select id="modalFiltTipo" class="filter-control" onchange="renderModal()">
+          <option value="">Todos los tipos</option>
+          <option>ASFALTADO</option><option>BACHEO</option><option>IMPRIMACION</option>
+          <option>DESHIERBE</option><option>OBRAS CIVILES</option>
+        </select>
+        <select id="modalFiltEstado" class="filter-control" onchange="renderModal()">
+          <option value="">Todos los estados</option>
+          <option>Completado</option><option>En Ejecucion</option><option>Planificado</option>
+        </select>
+        <select id="modalFiltUnidad" class="filter-control" onchange="renderModal()">
+          <option value="">Todas las unidades</option>
+        </select>
+        <span id="modalCountBadge" class="badge badge-secondary"></span>
+      </div>
+      <div class="items-table-wrap">
+        <table>
+          <thead><tr>
+            <th style="color:#333;background:#f0f0f0;">Cod. Obra</th>
+            <th style="color:#333;background:#f0f0f0;">Unidad Ejecutora</th>
+            <th style="color:#333;background:#f0f0f0;">Ubicación / Zona</th>
+            <th style="color:#333;background:#f0f0f0;text-align:right;">Total m²</th>
+            <th style="color:#333;background:#f0f0f0;">Tipos de Trabajo</th>
+            <th style="color:#333;background:#f0f0f0;text-align:center;">Registros</th>
+            <th style="color:#333;background:#f0f0f0;">Acciones</th>
+          </tr></thead>
+          <tbody id="modalTableBody"></tbody>
+        </table>
+      </div>
+      <div class="modal-footer-bar">
+        <div id="modalPagination" style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;"></div>
+        <button class="btn btn-outline btn-sm" onclick="exportModalYear()">📗 Exportar año</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmar eliminar año -->
+<div id="modalConfirmYear" style="display:none;" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Confirmar eliminación</span><button class="modal-close" onclick="closeConfirmYear()">✕</button></div>
+    <div class="modal-body"><p id="confirmYearMsg"></p></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeConfirmYear()">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmDeleteYear()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmar eliminar obra -->
+<div id="modalConfirm" style="display:none;" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Confirmar eliminación</span><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body"><p id="modalMsg"></p></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+AUTH.require();
+document.getElementById('sidebarContainer').innerHTML = renderSidebar('obras');
+document.getElementById('topbarContainer').innerHTML = renderTopbar('Registro de Obras','Plan de Asfaltos 2025-2026');
+
+const COLS = [
+  {key:'fecha',label:'Fecha'},{key:'codigo',label:'Codigo'},{key:'unidad',label:'Unidad Ejecutora'},
+  {key:'ubicacion',label:'Ubicacion'},{key:'zona',label:'Zona'},{key:'longitud',label:'Longitud (m)'},
+  {key:'ancho',label:'Ancho (m)'},{key:'area',label:'Area (m2)'},{key:'unid',label:'Unidad'},
+  {key:'tipo',label:'Tipo de Trabajo'},{key:'grupo',label:'Grupo'},{key:'estado',label:'Estado'},{key:'dia',label:'Dia'},
+  {key:'boletaMezcla',label:'Boleta Mezcla Asf.'},{key:'cantMezcla',label:'Mezcla Asfaltica (m3)'},
+  {key:'boletaBacheo',label:'Boleta Bacheo'},{key:'cantBacheo',label:'Mezcla Bacheo (m3)'},
+  {key:'boletaBase',label:'Boleta Capa Base'},{key:'cantBase',label:'Capa Base (m3)'},
+  {key:'tipoLigante',label:'Tipo Ligante'},{key:'obsLigante',label:'Obs Ligante'},{key:'cantLigante',label:'Ligante (Lts)'},
+  {key:'cantAluvial',label:'Mat. Aluvial (m3)'},{key:'cantPiedra',label:'Piedra Manzana (m3)'},
+  {key:'cantArena',label:'Arena (m3)'},{key:'cantCemento',label:'Cemento (Bls)'},
+  {key:'cantGasolina',label:'Gasolina (Lts)'},{key:'cantDiesel',label:'Diesel (Lts)'},
+  {key:'hrsTerminadora',label:'Terminadora (hrs)'},{key:'hrsRodilloLiso',label:'Rodillo Liso (hrs)'},
+  {key:'hrsRodilloNeuma',label:'Rodillo Neumatico (hrs)'},{key:'hrsRetroex',label:'Retroexcavadora (hrs)'},
+  {key:'hrsMotoNivel',label:'Motoniveladora (hrs)'},{key:'hrsTracto',label:'Tracto Camion (hrs)'},
+  {key:'hrsPlancha',label:'Plancha Vibradora (hrs)'},{key:'hrsCisterna',label:'Cisterna (hrs)'},
+  {key:'hrsSopladora',label:'Sopladora (hrs)'},{key:'hrsVibro',label:'Vibroapisonador (hrs)'},
+  {key:'hrsMezcladora',label:'Mezcladora (hrs)'},{key:'hrsMartillo',label:'Martillo Percutor (hrs)'},
+  {key:'hrsAmoladora',label:'Amoladora (hrs)'},{key:'hrsVolquetas',label:'Volquetas (hrs)'},
+  {key:'hrsCanter',label:'Canter (hrs)'},{key:'hrsCamionImp',label:'Camion Imprimador (hrs)'},
+  {key:'personal',label:'N Personas'},{key:'diaPersonal',label:'Dia Jornada'},{key:'horas',label:'Horas Trabajadas'}
+];
+
+let currentYear = null;
+let modalPage = 1;
+const modalPerPage = 10;
+let deleteCodigo = null;
+let deleteYearTarget = null;
+
+// ── Agrupación por año ──────────────────────────────────────────────
+function getYearGroups() {
+  const all = DB.get('obras');
+  const map = {};
+  all.forEach(o => {
+    const yr = (o.fecha||'').slice(0,4) || 'Sin Fecha';
+    if(!map[yr]) map[yr] = [];
+    map[yr].push(o);
+  });
+  return Object.entries(map).sort((a,b) => b[0].localeCompare(a[0]));
+}
+
+// ── Render tarjetas ─────────────────────────────────────────────────
+function renderCards() {
+  const groups = getYearGroups();
+  const all = DB.get('obras');
+
+  // Totales globales
+  const totalCodigosAll = new Set(all.map(o=>(o.codigo||'').trim()).filter(Boolean)).size;
+  const totalAreaAll = all.filter(o=>o.tipo==='ASFALTADO').reduce((s,o)=>s+(Number(o.area)||0),0);
+  const totalMezclaAll = all.reduce((s,o)=>s+(Number(o.cantMezcla)||0),0);
+  const totalPersonalAll = all.reduce((s,o)=>s+(Number(o.personal)||0),0);
+  const totalDieselAll = all.reduce((s,o)=>s+(Number(o.cantDiesel)||0),0);
+
+  document.getElementById('totalesBar').innerHTML = `
+    <div class="stat-card"><div class="stat-icon red">🏗️</div><div><div class="stat-value">${totalCodigosAll}</div><div class="stat-label">Total Obras</div></div></div>
+    <div class="stat-card"><div class="stat-icon blue">📐</div><div><div class="stat-value">${formatNumber(totalAreaAll,0)}</div><div class="stat-label">m² Área Total</div></div></div>
+    <div class="stat-card"><div class="stat-icon green">🏭</div><div><div class="stat-value">${formatNumber(totalMezclaAll,2)}</div><div class="stat-label">m³ Mezcla Asfáltica</div></div></div>
+    <div class="stat-card"><div class="stat-icon orange">👷</div><div><div class="stat-value">${totalPersonalAll}</div><div class="stat-label">Total Personal-Día</div></div></div>
+    <div class="stat-card"><div class="stat-icon blue">⛽</div><div><div class="stat-value">${formatNumber(totalDieselAll,0)}</div><div class="stat-label">Litros Diesel</div></div></div>`;
+
+  const importCardHtml = `<div class="year-card import-card" onclick="triggerImport()" title="Importar CSV">
+    <div class="import-card-icon">📥</div>
+    <div class="import-card-title">Importar nuevos datos</div>
+    <div class="import-card-sub">Haga clic para cargar un CSV</div>
+  </div>`;
+
+  document.getElementById('emptyState').style.display='none';
+
+  if(!groups.length) {
+    document.getElementById('yearCardsGrid').innerHTML = importCardHtml;
+    return;
+  }
+
+  document.getElementById('yearCardsGrid').innerHTML = groups.map(([yr, records]) => {
+    const codigos = new Set(records.map(o=>(o.codigo||'').trim()).filter(Boolean));
+    const unidades = [...new Set(records.map(o=>o.unidad).filter(Boolean))];
+    const tipos = [...new Set(records.map(o=>o.tipo).filter(Boolean))];
+    const areaAsf = records.filter(o=>o.tipo==='ASFALTADO').reduce((s,o)=>s+(Number(o.area)||0),0);
+    const mezcla = records.reduce((s,o)=>s+(Number(o.cantMezcla)||0),0);
+    const encYr = encodeURIComponent(yr);
+    return `<div class="year-card">
+      <div class="year-card-header">
+        <div>
+          <div class="year-badge">${escHtml(yr)}</div>
+          <div style="font-size:11px;opacity:.75;margin-top:3px;">${records.length} registros · ${codigos.size} obras únicas</div>
+        </div>
+        <div class="year-card-acts">
+          <button onclick="exportYear('${encYr}')">📗 Exportar</button>
+          <button onclick="askDeleteYear('${encYr}','${escHtml(yr)}')">🗑️ Eliminar</button>
+        </div>
+      </div>
+      <div class="year-card-body">
+        <div class="year-metrics">
+          <div class="year-metric"><div class="year-metric-val">${codigos.size}</div><div class="year-metric-lbl">Obras</div></div>
+          <div class="year-metric"><div class="year-metric-val">${formatNumber(areaAsf,0)}</div><div class="year-metric-lbl">m² Asfaltado</div></div>
+          <div class="year-metric"><div class="year-metric-val">${formatNumber(mezcla,1)}</div><div class="year-metric-lbl">m³ Mezcla</div></div>
+          <div class="year-metric"><div class="year-metric-val">${unidades.length}</div><div class="year-metric-lbl">Unidades</div></div>
+        </div>
+        <div class="year-tags">
+          ${unidades.map(u=>`<span class="badge badge-secondary" style="font-size:10px;margin:2px;">${escHtml(u)}</span>`).join('')}
+        </div>
+        <div class="year-tags">
+          ${tipos.map(t=>`<span class="badge" style="font-size:10px;margin:2px;background:#f0e8e8;color:#8B1A1A;border-radius:4px;padding:2px 7px;">${escHtml(t)}</span>`).join('')}
+        </div>
+      </div>
+      <div class="year-card-footer">
+        <button class="btn btn-primary btn-sm" onclick="openObrasModal('${encYr}')">👁️ Ver Obras</button>
+      </div>
+    </div>`;
+  }).join('') + importCardHtml;
+}
+
+// ── Modal obras de un año ───────────────────────────────────────────
+function openObrasModal(encYr) {
+  currentYear = decodeURIComponent(encYr);
+  modalPage = 1;
+  document.getElementById('modalObrasTitle').textContent = `Obras ${currentYear}`;
+  document.getElementById('modalSearch').value = '';
+  document.getElementById('modalFiltTipo').value = '';
+  document.getElementById('modalFiltEstado').value = '';
+
+  const records = DB.get('obras').filter(o => matchYear(o.fecha, currentYear));
+  const unidades = [...new Set(records.map(o=>o.unidad).filter(Boolean))].sort();
+  const sel = document.getElementById('modalFiltUnidad');
+  sel.innerHTML = '<option value="">Todas las unidades</option>';
+  unidades.forEach(u=>{ const op=document.createElement('option'); op.value=u; op.textContent=u; sel.appendChild(op); });
+
+  document.getElementById('modalObras').style.display='flex';
+  renderModal();
+}
+
+function closeObrasModal() { document.getElementById('modalObras').style.display='none'; currentYear=null; }
+
+function matchYear(fecha, yr) {
+  if(yr === 'Sin Fecha') return !(fecha||'').slice(0,4);
+  return (fecha||'').slice(0,4) === yr;
+}
+
+function getModalData() {
+  let data = DB.get('obras').filter(o => matchYear(o.fecha, currentYear));
+  const q = document.getElementById('modalSearch').value.trim();
+  const ft = document.getElementById('modalFiltTipo').value;
+  const fe = document.getElementById('modalFiltEstado').value;
+  const fu = document.getElementById('modalFiltUnidad').value;
+  if(q) data = filterData(data, q, ['codigo','unidad','ubicacion','zona','grupo']);
+  if(ft) data = data.filter(o=>o.tipo===ft);
+  if(fe) data = data.filter(o=>o.estado===fe);
+  if(fu) data = data.filter(o=>o.unidad===fu);
+  return data;
+}
+
+function getModalGroups(data) {
+  const map = {};
+  data.forEach(o => {
+    const key = (o.codigo||'').trim() || '(sin código)';
+    if(!map[key]) map[key] = { codigo: key, unidad: o.unidad||'', ubicacion: o.ubicacion||'', zona: o.zona||'', records: [] };
+    map[key].records.push(o);
+  });
+  return Object.values(map).sort((a,b)=>a.codigo.localeCompare(b.codigo));
+}
+
+function renderModal() {
+  const data = getModalData();
+  const groups = getModalGroups(data);
+  const total = groups.length;
+  const pages = Math.max(1, Math.ceil(total/modalPerPage));
+  if(modalPage > pages) modalPage = 1;
+  const slice = groups.slice((modalPage-1)*modalPerPage, modalPage*modalPerPage);
+  document.getElementById('modalCountBadge').textContent = `${total} obras · ${data.length} registros`;
+
+  document.getElementById('modalTableBody').innerHTML = slice.length ? slice.map(g => {
+    const areaAsf = g.records.filter(o=>o.tipo==='ASFALTADO').reduce((s,o)=>s+(Number(o.area)||0),0);
+    const tipos = [...new Set(g.records.map(o=>o.tipo).filter(Boolean))];
+    const enc = encodeURIComponent(g.codigo);
+    return `<tr>
+      <td><strong style="color:#8B1A1A;">${escHtml(g.codigo)}</strong></td>
+      <td>${escHtml(g.unidad||'-')}</td>
+      <td><div>${escHtml(g.ubicacion||'-')}</div><small style="color:#888;">${escHtml(g.zona||'-')}</small></td>
+      <td style="text-align:right;"><strong>${formatNumber(areaAsf,2)}</strong></td>
+      <td>${tipos.map(t=>`<span class="badge badge-secondary" style="margin:1px;">${escHtml(t)}</span>`).join('')||'-'}</td>
+      <td style="text-align:center;"><span class="badge badge-secondary">${g.records.length}</span></td>
+      <td><div class="table-actions">
+        <a href="view-obra.html?codigo=${enc}" class="btn btn-secondary btn-sm btn-icon" title="Ver detalle completo">👁️</a>
+        <a href="form-obra.html?id=${g.records[0].id}" class="btn btn-info btn-sm btn-icon" title="Editar">✏️</a>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="askDelete('${enc}','${escHtml(g.codigo)}')" title="Eliminar obra">🗑️</button>
+      </div></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="7" style="text-align:center;padding:32px;color:#999;">Sin resultados con los filtros aplicados</td></tr>`;
+
+  // Paginación
+  let pg = '';
+  if(pages > 1) {
+    if(modalPage>1) pg+=`<button class="page-btn" onclick="goModalPage(${modalPage-1})">‹</button>`;
+    for(let i=1;i<=pages;i++) pg+=`<button class="page-btn${i===modalPage?' active':''}" onclick="goModalPage(${i})">${i}</button>`;
+    if(modalPage<pages) pg+=`<button class="page-btn" onclick="goModalPage(${modalPage+1})">›</button>`;
+  }
+  if(total>0) pg += `<span class="page-info">${Math.min((modalPage-1)*modalPerPage+1,total)}-${Math.min(modalPage*modalPerPage,total)} de ${total}</span>`;
+  document.getElementById('modalPagination').innerHTML = pg;
+}
+
+function goModalPage(p) { modalPage=p; renderModal(); }
+
+// ── Exportar ────────────────────────────────────────────────────────
+function exportYear(encYr) {
+  const yr = decodeURIComponent(encYr);
+  const data = DB.get('obras').filter(o => matchYear(o.fecha, yr));
+  exportXLSX(data, `Obras ${yr}`, `Obras_${yr}_${new Date().toISOString().slice(0,10)}.xlsx`, COLS);
+}
+function exportModalYear() { if(currentYear) exportYear(encodeURIComponent(currentYear)); }
+
+// ── Eliminar obra (todos sus registros por código) ──────────────────
+function askDelete(enc, label) {
+  deleteCodigo = decodeURIComponent(enc);
+  document.getElementById('modalMsg').textContent = `¿Eliminar TODOS los registros de la obra "${label}"? Esta acción no se puede deshacer.`;
+  document.getElementById('modalConfirm').style.display='flex';
+}
+function closeModal() { document.getElementById('modalConfirm').style.display='none'; deleteCodigo=null; }
+function confirmDelete() {
+  if(!deleteCodigo){ closeModal(); return; }
+  let obras = DB.get('obras');
+  const before = obras.length;
+  obras = obras.filter(o=>(o.codigo||'').trim()!==deleteCodigo);
+  DB.set('obras', obras);
+  closeModal();
+  renderModal();
+  renderCards();
+  if(obras.length < before) toast('Obra eliminada','success');
+  else toast('No se encontraron registros para eliminar','warning');
+}
+
+// ── Eliminar año completo ───────────────────────────────────────────
+function askDeleteYear(encYr, label) {
+  deleteYearTarget = decodeURIComponent(encYr);
+  document.getElementById('confirmYearMsg').textContent = `¿Eliminar TODOS los registros del año "${label}"? Esta acción no se puede deshacer.`;
+  document.getElementById('modalConfirmYear').style.display='flex';
+}
+function closeConfirmYear() { document.getElementById('modalConfirmYear').style.display='none'; deleteYearTarget=null; }
+function confirmDeleteYear() {
+  if(!deleteYearTarget){ closeConfirmYear(); return; }
+  let obras = DB.get('obras');
+  const before = obras.length;
+  obras = obras.filter(o => !matchYear(o.fecha, deleteYearTarget));
+  DB.set('obras', obras);
+  closeConfirmYear();
+  renderCards();
+  if(obras.length < before) toast('Registros del año eliminados','success');
+}
+
+// ── Importar CSV ────────────────────────────────────────────────────
+function triggerImport() { document.getElementById('fileImport').click(); }
+function handleImport(inp) {
+  importCSV(inp.files[0], COLS, function(records){
+    const existing = DB.get('obras');
+    const ids = existing.map(o=>parseInt(o.id)||0).filter(n=>isFinite(n));
+    let maxId = ids.length ? Math.max(...ids) : 0;
+    // Dedup: omitir por fecha+calle+unidad
+    const existingKeys = new Set(existing.map(o=>(o.fecha||'')+'|'+(o.calle||o.direccion||o.ubicacion||'')+'|'+(o.unidad||'')));
+    const nuevos = [], dupes_count = {n:0};
+    records.forEach(r=>{
+      const key = (r.fecha||'')+'|'+(r.calle||r.direccion||r.ubicacion||'')+'|'+(r.unidad||'');
+      if(existingKeys.has(key)){ dupes_count.n++; return; }
+      existingKeys.add(key);
+      r.id = ++maxId;
+      if(r.area) r.area=parseFloat(r.area)||0;
+      if(r.longitud) r.longitud=parseFloat(r.longitud)||0;
+      if(r.ancho) r.ancho=parseFloat(r.ancho)||0;
+      if(r.cantMezcla) r.cantMezcla=parseFloat(r.cantMezcla)||0;
+      if(r.cantBacheo) r.cantBacheo=parseFloat(r.cantBacheo)||0;
+      if(r.cantBase) r.cantBase=parseFloat(r.cantBase)||0;
+      if(r.cantLigante) r.cantLigante=parseFloat(r.cantLigante)||0;
+      if(r.cantDiesel) r.cantDiesel=parseFloat(r.cantDiesel)||0;
+      if(r.cantGasolina) r.cantGasolina=parseFloat(r.cantGasolina)||0;
+      if(r.cantAluvial) r.cantAluvial=parseFloat(r.cantAluvial)||0;
+      if(r.cantPiedra) r.cantPiedra=parseFloat(r.cantPiedra)||0;
+      if(r.cantArena) r.cantArena=parseFloat(r.cantArena)||0;
+      if(r.cantCemento) r.cantCemento=parseFloat(r.cantCemento)||0;
+      if(r.personal) r.personal=parseInt(r.personal)||0;
+      if(r.dia) r.dia=parseInt(r.dia)||1;
+      if(r.horas) r.horas=parseFloat(r.horas)||0;
+      nuevos.push(r);
+    });
+    DB.set('obras', [...existing, ...nuevos]);
+    renderCards();
+    const msg = nuevos.length+' obras agregadas'+(dupes_count.n?' · '+dupes_count.n+' ya existían (omitidas)':'');
+    toast(msg, 'success');
+  });
+  inp.value='';
+}
+
+renderCards();
+</script>
+</body>
+</html>
