@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMAVIAS - Registrar Obra</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.section-divider{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#8B1A1A;border-bottom:1px solid #e8d5d5;padding-bottom:6px;margin:16px 0 10px 0;}
+.section-divider:first-child{margin-top:0;}
+.equipo-row{display:grid;grid-template-columns:1fr 100px;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid #f5f5f5;}
+.equipo-row:last-child{border-bottom:none;}
+.equipo-label{font-size:13px;color:#444;}
+.input-with-unit{position:relative;}
+.input-with-unit input{padding-right:36px;}
+.input-with-unit .unit-label{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#888;font-weight:600;pointer-events:none;}
+.col-header{font-size:10px;font-weight:700;text-transform:uppercase;color:#999;padding:0 0 4px 0;}
+.mat-row{display:grid;gap:8px;align-items:end;margin-bottom:8px;}
+.mat-row-3{grid-template-columns:1fr 130px 100px;}
+.mat-row-label{font-size:13px;color:#444;padding:8px 0 4px 0;}
+</style>
+</head>
+<body>
+<div id="sidebarContainer"></div>
+<div class="main-content">
+  <div id="topbarContainer"></div>
+  <div class="page-content">
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb"><a href="obras.html">Registro de Obras</a><span class="breadcrumb-sep">›</span><span id="formTitle">Nueva Obra</span></div>
+        <div class="page-title" id="pageTitle">➕ Nueva Obra</div>
+        <div class="page-subtitle">Complete todos los datos del registro de obra</div>
+      </div>
+      <a href="obras.html" class="btn btn-outline btn-sm">← Volver al listado</a>
+    </div>
+
+    <form id="obraForm" onsubmit="saveObra(event)">
+
+      <!-- 1. DATOS DE UBICACIÓN -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><span class="card-title">📍 Datos de Ubicación</span></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Fecha <span style="color:red">*</span></label>
+              <input type="date" id="fecha" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Código de Obra <span style="color:red">*</span></label>
+              <input type="text" id="codigo" class="form-control" placeholder="EMA-01" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Unidad Ejecutora <span style="color:red">*</span></label>
+              <select id="unidad" class="form-control" required>
+                <option value="">Seleccionar...</option>
+                <option>MALLASILLA</option><option>SAN ANTONIO</option><option>CENTRO</option>
+                <option>COTAHUMA</option><option>MAX PAREDES</option><option>PERIFERICA</option>
+                <option>SUR</option><option>MALLASA</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ubicación / Calle <span style="color:red">*</span></label>
+              <input type="text" id="ubicacion" class="form-control" placeholder="Calle o Avenida" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Zona</label>
+              <input type="text" id="zona" class="form-control" placeholder="Nombre de la zona">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tipo de Trabajo <span style="color:red">*</span></label>
+              <select id="tipo" class="form-control" required>
+                <option value="">Seleccionar...</option>
+                <option>ASFALTADO</option><option>BACHEO</option><option>IMPRIMACION</option>
+                <option>DESHIERBE</option><option>BARRIDO DE PLATAFORMA</option>
+                <option>SOPLADO DE PLATAFORMA</option><option>CONFORMACION</option>
+                <option>EXCAVACION</option><option>COMPACTACION</option>
+                <option>VACIADO DE CUNETA</option><option>OBRAS CIVILES</option>
+                <option>DEMOLICION DE CAMARA</option><option>ELEVACION DE CAMARA</option>
+                <option>ENLUCIDO DE CAMARA</option><option>RETIRO DE ESCOMBROS</option>
+                <option>CORTADO DE ASFALTO</option><option>RETIRO DE ASFALTO</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Grupo</label>
+              <select id="grupo" class="form-control">
+                <option>ASFALTO 1</option><option>ASFALTO 2</option><option>ASFALTO 3</option>
+                <option>BACHEO 1</option><option>OBRAS CIVILES</option><option>AVANZADA</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Estado</label>
+              <select id="estado" class="form-control">
+                <option>Planificado</option><option>En Ejecucion</option><option>Completado</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Día N°</label>
+              <input type="number" id="dia" class="form-control" min="1" placeholder="1">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. DIMENSIONES -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><span class="card-title">📐 Dimensiones y Medidas</span></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Longitud (m)</label>
+              <input type="number" id="longitud" class="form-control" step="0.01" placeholder="0.00" oninput="calcArea()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ancho (m)</label>
+              <input type="number" id="ancho" class="form-control" step="0.01" placeholder="0.00" oninput="calcArea()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Área (m² / m³)</label>
+              <input type="number" id="area" class="form-control" step="0.0001" placeholder="0.00">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Unidad de Medida</label>
+              <select id="unid" class="form-control">
+                <option>M2</option><option>M3</option><option>ML</option><option>PZA</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. MATERIALES Y RECURSOS -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><span class="card-title">🏭 Materiales y Recursos</span></div>
+        <div class="card-body">
+
+          <div class="section-divider">Mezclas Asfálticas</div>
+          <!-- headers -->
+          <div style="display:grid;grid-template-columns:1fr 140px 110px;gap:8px;margin-bottom:4px;">
+            <div class="col-header">Material</div>
+            <div class="col-header">N° Boleta</div>
+            <div class="col-header">Cantidad</div>
+          </div>
+          <div class="mat-row mat-row-3">
+            <div class="mat-row-label">Mezcla Asfáltica</div>
+            <input type="text" id="boletaMezcla" class="form-control" placeholder="N° Boleta">
+            <div class="input-with-unit">
+              <input type="number" id="cantMezcla" class="form-control" step="0.01" placeholder="0.00">
+              <span class="unit-label">m³</span>
+            </div>
+          </div>
+          <div class="mat-row mat-row-3">
+            <div class="mat-row-label">Mezcla Bacheo / Nivelación</div>
+            <input type="text" id="boletaBacheo" class="form-control" placeholder="N° Boleta">
+            <div class="input-with-unit">
+              <input type="number" id="cantBacheo" class="form-control" step="0.01" placeholder="0.00">
+              <span class="unit-label">m³</span>
+            </div>
+          </div>
+          <div class="mat-row mat-row-3" style="margin-bottom:0;">
+            <div class="mat-row-label">Capa Base</div>
+            <input type="text" id="boletaBase" class="form-control" placeholder="N° Boleta">
+            <div class="input-with-unit">
+              <input type="number" id="cantBase" class="form-control" step="0.01" placeholder="0.00">
+              <span class="unit-label">m³</span>
+            </div>
+          </div>
+
+          <div class="section-divider">Imprimación / Ligante Asfáltico</div>
+          <div style="display:grid;grid-template-columns:150px 1fr 120px;gap:8px;align-items:end;">
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Tipo de Ligante</label>
+              <select id="tipoLigante" class="form-control">
+                <option value="">-- Sin ligante --</option>
+                <option>MC30</option><option>MC70</option><option>RC250</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Tramo / Observación</label>
+              <input type="text" id="obsLigante" class="form-control" placeholder="Descripción del tramo imprimado">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Cantidad</label>
+              <div class="input-with-unit">
+                <input type="number" id="cantLigante" class="form-control" step="0.1" placeholder="0.0">
+                <span class="unit-label">Lts</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-divider">Áridos y Materiales Granulares</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Material Aluvial</label>
+              <div class="input-with-unit">
+                <input type="number" id="cantAluvial" class="form-control" step="0.01" placeholder="0.00">
+                <span class="unit-label">m³</span>
+              </div>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Piedra Manzana</label>
+              <div class="input-with-unit">
+                <input type="number" id="cantPiedra" class="form-control" step="0.01" placeholder="0.00">
+                <span class="unit-label">m³</span>
+              </div>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Arena</label>
+              <div class="input-with-unit">
+                <input type="number" id="cantArena" class="form-control" step="0.01" placeholder="0.00">
+                <span class="unit-label">m³</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-divider">Otros Materiales</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Cemento</label>
+              <div class="input-with-unit">
+                <input type="number" id="cantCemento" class="form-control" step="1" placeholder="0">
+                <span class="unit-label">Bls</span>
+              </div>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Gasolina</label>
+              <div class="input-with-unit">
+                <input type="number" id="cantGasolina" class="form-control" step="0.1" placeholder="0.0">
+                <span class="unit-label">Lts</span>
+              </div>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Diesel</label>
+              <div class="input-with-unit">
+                <input type="number" id="cantDiesel" class="form-control" step="0.1" placeholder="0.0">
+                <span class="unit-label">Lts</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 4. MAQUINARIA Y EQUIPOS -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><span class="card-title">🚜 Maquinaria y Equipos</span></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 40px;">
+            <!-- Col izquierda -->
+            <div>
+              <div style="display:grid;grid-template-columns:1fr 90px;gap:8px;margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid #f0f0f0;">
+                <div class="col-header">Equipo</div>
+                <div class="col-header">Horas</div>
+              </div>
+              <div class="equipo-row"><div class="equipo-label">Terminadora</div><div class="input-with-unit"><input type="number" id="hrsTerminadora" class="form-control" step="0.5" min="0" placeholder="0.0"><span class="unit-label">hrs</span></div></div>
+              <div class="equipo-row"><div class="equipo-label">Compactador Rodillo Liso</div><div class="input-with-unit"><input type="number" id="hrsRodilloLiso" class="form-control" step="0.5" min="0" placeholder="0.0"><span class="unit-label">hrs</span></div></div>
+              <div class="equipo-row"><div class="equipo-label">Compactador Rodillo Neumático</div><div class="input-with-unit"><input type="number" id="hrsRodilloNeuma" class="form-control" step="0.5" min="0" placeholder="0.0"><span class="unit-label">hrs</span></div></div>
+              <div class="equipo-row"><div class="equipo-label">Retroexcavadora</div><div class="input-with-unit"><input type="number" id="hrsRetroex" class="form-control" step="0.5" min="0" placeholder="0.0"><span class="unit-label">hrs</span></div></div>
+              <div class="equipo-row"><div class="equipo-label">Motoniveladora</div><div class="input-with-unit"><input type="number" id="hrsMotoNivel" class="form-control" step="0.5" min="0" placeholder="0.0"><span class="unit-label">hrs</span></div></div>
+              <div class="equipo-row"><div class="equipo-label">Tracto Camión</div><div class="input-with-unit"><input type="number" id="hrsTracto" class="form-control" step="0.5" min="0" placeholder="0.0"><span class="unit-label">hrs</span></div></div>
+              <div class="equipo-row"><div class="equipo-label">Plancha Vibradora</div><div class="input-with-unit"><input type="number" id="hrsPlancha" class="form-control" step="0.5" min="0" placeholder="0.0"><span class="unit-label">hrs</span></div></div>
+              <div class="equipo-row"><div class="equipo-label">Cisterna</div><div class="input-with-unit"><input type="number" id="hrsCisterna" class="form-control" step="0.5" min="0" placeholder="0.0"><span class="unit-label">hrs</span></div></div>
+            </div>
+            <!-- Col derecha -->
+            <div>
+              <div style="display:grid;grid-template-columns:1fr 90px;gap:8px;margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid #f0f0f0;">
+                <div class="col-header">Equipo</div>
+                <div class="col-header">Horas</div>
+              </div>
+              <div class="equipo-row"><div class="equipo-label">Sopladora</div><div class="input-with-unit"><input type="number" id="hrsSopladora" class="form-control" step="0.5" min="0" placeholder="0.0"><span class="unit-label">hrs</span></div></div>
+              <div class="equipo-row"><div class="equipo-label">Vibroapisonador</div><div class="input-with-unit"><input type="number" id="hrsVibro" class="form-control" step="0.5" min="0" placeholder="0.0"><span class="unit-label">hrs</span></div></div>
+              <div class="equipo-row"><div class="equipo-label">Mezcladora</div><div class="input-with-unit"><input type="number" id="hrsMezcladora" class="form-control" step="0.5" min="0" placeholder="0.0"><span class="unit-label">hrs</span></div></div>
+              <div class="equipo-row"><div class="equipo-label">Martillo Percutor</div><div class="input-with-unit"><input type="number" id="hrsMartillo" class="form-control" step="0.5" min="0" placeholder="0.0"><span class="unit-label">hrs</span></div></div>
+              <div class="equipo-row"><div class="equipo-label">Amoladora</div><div class="input-with-unit"><input type="number" id="hrsAmoladora" class="form-control" step="0.5" min="0" placeholder="0.0"><span class="unit-label">hrs</span></div></div>
+              <div class="equipo-row"><div class="equipo-label">Volquetas</div><div class="input-with-unit"><input type="number" id="hrsVolquetas" class="form-control" step="0.5" min="0" placeholder="0.0"><span class="unit-label">hrs</span></div></div>
+              <div class="equipo-row"><div class="equipo-label">Canter</div><div class="input-with-unit"><input type="number" id="hrsCanter" class="form-control" step="0.5" min="0" placeholder="0.0"><span class="unit-label">hrs</span></div></div>
+              <div class="equipo-row"><div class="equipo-label">Camión Imprimador</div><div class="input-with-unit"><input type="number" id="hrsCamionImp" class="form-control" step="0.5" min="0" placeholder="0.0"><span class="unit-label">hrs</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. PERSONAL -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><span class="card-title">👷 Personal en Obra</span></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">N° de Personas</label>
+              <div class="input-with-unit">
+                <input type="number" id="personal" class="form-control" min="0" placeholder="0">
+                <span class="unit-label">pers.</span>
+              </div>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Día N° (jornada)</label>
+              <div class="input-with-unit">
+                <input type="number" id="diaPersonal" class="form-control" min="1" placeholder="1">
+                <span class="unit-label">día</span>
+              </div>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Horas Trabajadas en Obra</label>
+              <div class="input-with-unit">
+                <input type="number" id="horas" class="form-control" step="0.5" placeholder="0.0">
+                <span class="unit-label">hrs</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;padding-bottom:24px;">
+        <a href="obras.html" class="btn btn-outline">Cancelar</a>
+        <button type="submit" class="btn btn-primary">💾 Guardar Obra</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+AUTH.require();
+document.getElementById('sidebarContainer').innerHTML = renderSidebar('obras');
+document.getElementById('topbarContainer').innerHTML = renderTopbar('Registro de Obras','Nuevo / Editar Registro');
+
+const params = new URLSearchParams(location.search);
+const editId = params.get('id') ? parseInt(params.get('id')) : null;
+
+const ALL_FIELDS = [
+  'fecha','codigo','unidad','ubicacion','zona','tipo','grupo','estado','dia',
+  'longitud','ancho','area','unid',
+  'boletaMezcla','cantMezcla','boletaBacheo','cantBacheo','boletaBase','cantBase',
+  'tipoLigante','obsLigante','cantLigante',
+  'cantAluvial','cantPiedra','cantArena','cantCemento','cantGasolina','cantDiesel',
+  'hrsTerminadora','hrsRodilloLiso','hrsRodilloNeuma','hrsRetroex','hrsMotoNivel',
+  'hrsTracto','hrsPlancha','hrsCisterna','hrsSopladora','hrsVibro','hrsMezcladora',
+  'hrsMartillo','hrsAmoladora','hrsVolquetas','hrsCanter','hrsCamionImp',
+  'personal','diaPersonal','horas'
+];
+
+function getV(id){ const el=document.getElementById(id); return el?el.value:''; }
+function getN(id){ return parseFloat(getV(id))||0; }
+
+if(editId) {
+  const obra = DB.get('obras').find(o=>o.id===editId);
+  if(obra) {
+    document.getElementById('formTitle').textContent = 'Editar Obra';
+    document.getElementById('pageTitle').textContent = '✏️ Editar Obra';
+    ALL_FIELDS.forEach(k=>{ const el=document.getElementById(k); if(el && obra[k]!==undefined) el.value=obra[k]; });
+  }
+} else {
+  document.getElementById('fecha').value = today();
+}
+
+function calcArea() {
+  const l=parseFloat(document.getElementById('longitud').value)||0;
+  const a=parseFloat(document.getElementById('ancho').value)||0;
+  if(l>0&&a>0) document.getElementById('area').value=(l*a).toFixed(4);
+}
+
+function saveObra(e) {
+  e.preventDefault();
+  const obra = {
+    id: editId || DB.nextId('obras'),
+    fecha:getV('fecha'), codigo:getV('codigo'), unidad:getV('unidad'),
+    ubicacion:getV('ubicacion'), zona:getV('zona'), tipo:getV('tipo'),
+    grupo:getV('grupo'), estado:getV('estado'), dia:getN('dia'),
+    longitud:getN('longitud'), ancho:getN('ancho'), area:getN('area'), unid:getV('unid'),
+    boletaMezcla:getV('boletaMezcla'), cantMezcla:getN('cantMezcla'),
+    boletaBacheo:getV('boletaBacheo'), cantBacheo:getN('cantBacheo'),
+    boletaBase:getV('boletaBase'), cantBase:getN('cantBase'),
+    tipoLigante:getV('tipoLigante'), obsLigante:getV('obsLigante'), cantLigante:getN('cantLigante'),
+    cantAluvial:getN('cantAluvial'), cantPiedra:getN('cantPiedra'), cantArena:getN('cantArena'),
+    cantCemento:getN('cantCemento'), cantGasolina:getN('cantGasolina'), cantDiesel:getN('cantDiesel'),
+    hrsTerminadora:getN('hrsTerminadora'), hrsRodilloLiso:getN('hrsRodilloLiso'),
+    hrsRodilloNeuma:getN('hrsRodilloNeuma'), hrsRetroex:getN('hrsRetroex'),
+    hrsMotoNivel:getN('hrsMotoNivel'), hrsTracto:getN('hrsTracto'),
+    hrsPlancha:getN('hrsPlancha'), hrsCisterna:getN('hrsCisterna'),
+    hrsSopladora:getN('hrsSopladora'), hrsVibro:getN('hrsVibro'),
+    hrsMezcladora:getN('hrsMezcladora'), hrsMartillo:getN('hrsMartillo'),
+    hrsAmoladora:getN('hrsAmoladora'), hrsVolquetas:getN('hrsVolquetas'),
+    hrsCanter:getN('hrsCanter'), hrsCamionImp:getN('hrsCamionImp'),
+    personal:getN('personal'), diaPersonal:getN('diaPersonal'), horas:getN('horas')
+  };
+  let obras = DB.get('obras');
+  if(editId){ obras=obras.map(o=>o.id===editId?obra:o); }
+  else{ obras.push(obra); }
+  DB.set('obras', obras);
+  toast('Obra guardada correctamente','success');
+  setTimeout(()=>window.location.href='obras.html', 900);
+}
+</script>
+</body>
+</html>

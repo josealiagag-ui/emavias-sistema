@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMAVIAS - Boletas de Salida</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+/* ---- PRINT ---- */
+#printArea { display:none; }
+@media print {
+  body.printing > * { display:none !important; }
+  body.printing #printArea { display:block !important; }
+}
+.pw { font-family:Arial,sans-serif; font-size:11px; color:#000; padding:8mm 10mm; max-width:195mm; margin:0 auto; }
+.ph { display:flex; border:1.5px solid #000; }
+.ph-logo { padding:6px 10px; border-right:1px solid #000; display:flex; align-items:center; }
+.ph-logo img { height:46px; object-fit:contain; }
+.ph-title { flex:1; text-align:center; padding:6px 10px; border-right:1px solid #000; display:flex; flex-direction:column; justify-content:center; }
+.ph-title .reg { font-size:9px; letter-spacing:2px; text-transform:uppercase; }
+.ph-title .tit { font-size:18px; font-weight:bold; text-decoration:underline; }
+.ph-code { padding:6px 10px; min-width:130px; display:flex; flex-direction:column; justify-content:center; gap:4px; text-align:center; }
+.ph-code-box { border:1.5px solid #000; padding:2px 6px; font-size:10px; font-weight:bold; background:#fffde7; }
+.pt { width:100%; border-collapse:collapse; font-size:10.5px; }
+.pt td { border:1px solid #000; padding:3px 6px; vertical-align:middle; }
+.ptL { font-weight:bold; white-space:nowrap; background:#f0f0f0; width:95px; }
+.ptS { font-weight:bold; font-size:9.5px; background:#f0f0f0; text-align:center; }
+.ptV { font-weight:bold; }
+.ck { font-weight:bold; font-size:12px; }
+.psigs { display:flex; justify-content:space-around; margin-top:48px; text-align:center; }
+.psig { width:28%; text-align:center; }
+.psig-line { border-top:1px dotted #555; padding-top:4px; font-weight:bold; font-size:9px; display:inline-block; background:#fffde7; padding:2px 10px; }
+.pnote { margin-top:10px; font-size:9px; font-style:italic; }
+</style>
+</head>
+<body>
+<div id="sidebarContainer"></div>
+<div class="main-content">
+  <div id="topbarContainer"></div>
+  <div class="page-content">
+
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb"><span>EMAVIAS</span><span class="breadcrumb-sep">›</span><span>Boletas de Salida</span></div>
+        <div class="page-title">📋 Registro de Boletas de Salida</div>
+        <div class="page-subtitle">Control de permisos y salidas de personal — URH.P03.R02</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-outline btn-sm" onclick="triggerImport()">📥 Importar CSV</button>
+        <button class="btn btn-success btn-sm" onclick="doExport()">📗 Exportar Excel</button>
+        <button class="btn btn-primary btn-sm" onclick="openForm()">➕ Nueva Boleta</button>
+      </div>
+    </div>
+
+    <!-- Banner reglamento -->
+    <div style="background:linear-gradient(135deg,#8B1A1A,#6b1212);color:#fff;border-radius:10px;padding:16px 20px;margin-bottom:16px;display:flex;gap:32px;flex-wrap:wrap;align-items:center;">
+      <div>
+        <div style="font-size:11px;opacity:0.7;text-transform:uppercase;letter-spacing:1px;">Reglamento EMAVIAS</div>
+        <div style="font-size:14px;font-weight:600;margin-top:2px;">📌 Máx. 2 Hrs. Adm./mes por funcionario &nbsp;|&nbsp; 📌 Máx. 2 Días Adm./año por funcionario</div>
+      </div>
+      <div style="margin-left:auto;font-size:12px;opacity:0.8;" id="periodoInfo"></div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid" style="margin-bottom:16px;"></div>
+
+    <div class="card">
+      <div class="filters-bar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Buscar nombre, CI, cargo..." oninput="renderTable()">
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Tipo:</span>
+          <select id="filtTipo" class="filter-control" onchange="renderTable()">
+            <option value="">Todos</option>
+            <option>Hrs. Adm.</option><option>Médico</option><option>Particular/Otro</option>
+            <option>Días Administ.</option><option>Compensación</option><option>Comisión</option>
+            <option>Duelo/Cumpleaños</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Unidad:</span>
+          <select id="filtUnidad" class="filter-control" onchange="renderTable()">
+            <option value="">Todas</option>
+            <option>Gerencia General</option><option>Gerencia Técnica</option><option>Gerencia Administrativa</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Mes:</span>
+          <select id="filtMes" class="filter-control" onchange="renderTable()">
+            <option value="">Todos</option>
+            <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+            <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+            <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+            <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+          </select>
+        </div>
+        <div class="spacer"></div>
+        <span id="countBadge" class="badge badge-secondary"></span>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr>
+            <th>Fecha</th><th>Nombre Funcionario</th><th>C.I.</th>
+            <th>Unidad / Área</th><th>Cargo</th><th>Ítem</th>
+            <th>Tipo</th><th>Duración / Horario</th>
+            <th>Jefe Autoriza</th><th>Obs.</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="paginationBar"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL FORM ===================== -->
+<div id="modalForm" style="display:none;" class="modal-overlay">
+  <div class="modal" style="max-width:740px;">
+    <div class="modal-header">
+      <span class="modal-title" id="modalFormTitle">Nueva Boleta de Salida</span>
+      <button class="modal-close" onclick="closeForm()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Cod interna -->
+      <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:8px 14px;margin-bottom:14px;display:flex;align-items:center;gap:20px;">
+        <span style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;">Codificación Interna</span>
+        <strong style="color:#8B1A1A;font-size:15px;letter-spacing:1px;">URH.P03.R02</strong>
+        <span style="font-size:10px;color:#888;">Versión 2</span>
+      </div>
+
+      <div class="form-grid-2">
+
+        <div class="form-group">
+          <label class="form-label">Fecha <span style="color:red">*</span></label>
+          <input type="date" id="f_fecha" class="form-control" required onchange="updateQuota()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">N° Ítem</label>
+          <input type="text" id="f_item" class="form-control" placeholder="Ej: 57">
+        </div>
+
+        <div class="form-group form-full">
+          <label class="form-label">Nombre Completo del Funcionario <span style="color:red">*</span></label>
+          <input type="text" id="f_nombre" class="form-control" placeholder="Apellido Paterno Materno, Nombre(s)" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">C.I. <span style="color:red">*</span></label>
+          <input type="text" id="f_ci" class="form-control" placeholder="1234567 LP" required oninput="updateQuota()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cargo</label>
+          <input type="text" id="f_cargo" class="form-control" placeholder="Ej: Técnico de Costeo de Obras">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Unidad / Área <span style="color:red">*</span></label>
+          <select id="f_unidad" class="form-control" required>
+            <option value="">Seleccionar...</option>
+            <option>Gerencia General</option>
+            <option>Gerencia Técnica</option>
+            <option>Gerencia Administrativa</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo de Salida <span style="color:red">*</span></label>
+          <select id="f_tipo" class="form-control" onchange="toggleTipoFields()" required>
+            <option value="">Seleccionar...</option>
+            <option value="Hrs. Adm.">⏱️ Hrs. Adm. (Horas Administrativas)</option>
+            <option value="Médico">🏥 Médico</option>
+            <option value="Particular/Otro">👤 Particular / Otro</option>
+            <option value="Días Administ.">📅 Días Administrativos</option>
+            <option value="Compensación">🔄 Compensación</option>
+            <option value="Comisión">📋 Comisión</option>
+            <option value="Duelo/Cumpleaños">🕊️ Duelo / Cumpleaños</option>
+          </select>
+        </div>
+
+        <!-- Duración Hrs. Adm. -->
+        <div class="form-group" id="grpDurHrs" style="display:none;">
+          <label class="form-label">Duración <span style="color:red">*</span></label>
+          <select id="f_durHrs" class="form-control" onchange="updateQuota()">
+            <option value="">Seleccionar duración...</option>
+            <option value="0.5">30 minutos</option>
+            <option value="1">1 hora</option>
+            <option value="1.5">1 hora 30 minutos</option>
+            <option value="2">2 horas</option>
+          </select>
+        </div>
+
+        <!-- Duración Días Administ. -->
+        <div class="form-group" id="grpDurDias" style="display:none;">
+          <label class="form-label">Duración <span style="color:red">*</span></label>
+          <select id="f_durDias" class="form-control" onchange="updateQuota()">
+            <option value="">Seleccionar duración...</option>
+            <option value="0.5">Medio día</option>
+            <option value="1">1 día</option>
+            <option value="2">2 días</option>
+          </select>
+        </div>
+
+        <!-- Horario (para salidas sub-día excepto Días Administ.) -->
+        <div class="form-group" id="grpHorario" style="display:none;">
+          <label class="form-label">Horario</label>
+          <div style="display:flex;gap:8px;align-items:flex-end;">
+            <div style="flex:1;">
+              <small style="color:#888;font-size:11px;">De horas</small>
+              <input type="time" id="f_horaSal" class="form-control">
+            </div>
+            <span style="color:#aaa;padding-bottom:8px;">→</span>
+            <div style="flex:1;">
+              <small style="color:#888;font-size:11px;">A horas</small>
+              <input type="time" id="f_horaRet" class="form-control">
+            </div>
+          </div>
+        </div>
+
+        <!-- Rango días (para Días Administ.) -->
+        <div class="form-group" id="grpRangoDias" style="display:none;">
+          <label class="form-label">Rango de fechas</label>
+          <div style="display:flex;gap:8px;align-items:flex-end;">
+            <div style="flex:1;">
+              <small style="color:#888;font-size:11px;">Del día</small>
+              <input type="date" id="f_diasDesde" class="form-control">
+            </div>
+            <span style="color:#aaa;padding-bottom:8px;">→</span>
+            <div style="flex:1;">
+              <small style="color:#888;font-size:11px;">Al día</small>
+              <input type="date" id="f_diasHasta" class="form-control">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group form-full">
+          <label class="form-label">Jefe Inmediato Superior que Autoriza</label>
+          <input type="text" id="f_jefe" class="form-control" placeholder="Nombre completo del jefe que autoriza la salida">
+        </div>
+
+        <div class="form-group form-full">
+          <label class="form-label">Observaciones / Motivo</label>
+          <textarea id="f_obs" class="form-control" rows="2" placeholder="Motivo detallado..."></textarea>
+        </div>
+      </div>
+
+      <!-- Cupo en tiempo real -->
+      <div id="quotaInfo" style="display:none;border-radius:6px;padding:10px 14px;margin-top:6px;font-size:13px;"></div>
+      <div id="alertaCupo" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:10px 14px;margin-top:6px;font-size:13px;color:#856404;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeForm()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveRecord()">💾 Guardar Boleta</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PRINT AREA ===================== -->
+<div id="printArea">
+  <div class="pw">
+    <!-- Encabezado -->
+    <div class="ph">
+      <div class="ph-logo">
+        <img src="img/logo.png" alt="emavias">
+      </div>
+      <div class="ph-title">
+        <div class="reg">REGISTRO</div>
+        <div class="tit">BOLETA DE SALIDA</div>
+      </div>
+      <div class="ph-code">
+        <div class="ph-code-box">Código: URH.P03.R02</div>
+        <div class="ph-code-box">Versión: 2</div>
+      </div>
+    </div>
+
+    <!-- Tabla datos -->
+    <table class="pt">
+      <!-- Nombre / Menores a un día -->
+      <tr>
+        <td class="ptL">Nombre:</td>
+        <td class="ptV" colspan="3" id="pr_nombre"></td>
+        <td class="ptS" style="width:110px;">Menores a un día:</td>
+        <td colspan="2" style="font-size:10px;">Fecha: &nbsp;<strong id="pr_fecha"></strong></td>
+      </tr>
+      <tr>
+        <td class="ptL">C.I.</td>
+        <td class="ptV" colspan="3" id="pr_ci"></td>
+        <td colspan="3" style="font-size:10px;">De horas: <strong id="pr_de"></strong> &nbsp;&nbsp;&nbsp; A horas: <strong id="pr_a"></strong></td>
+      </tr>
+      <tr>
+        <td class="ptL">Unidad - Área:</td>
+        <td class="ptV" colspan="3" id="pr_unidad"></td>
+        <td colspan="3"></td>
+      </tr>
+      <tr>
+        <td class="ptL">Cargo:</td>
+        <td class="ptV" colspan="3" id="pr_cargo"></td>
+        <td colspan="3"></td>
+      </tr>
+      <tr>
+        <td class="ptL">N° de Ítem:</td>
+        <td class="ptV" id="pr_item"></td>
+        <td colspan="2"></td>
+        <td colspan="3"></td>
+      </tr>
+
+      <!-- A cuenta de -->
+      <tr>
+        <td class="ptL" style="font-size:10px;">A cuenta de:</td>
+        <td style="font-size:10px;text-align:center;">Particular /Otro** &nbsp;<span class="ck" id="pr_ck_part"></span></td>
+        <td style="font-size:10px;text-align:center;">Médico * &nbsp;<span class="ck" id="pr_ck_med"></span></td>
+        <td style="font-size:10px;text-align:center;">Hrs. Adm. &nbsp;<span class="ck" id="pr_ck_hrs"></span></td>
+        <td colspan="3" style="font-size:10px;text-align:center;">2 Días Administ. &nbsp;<span class="ck" id="pr_ck_dias"></span></td>
+      </tr>
+      <tr>
+        <td class="ptL" style="font-size:10px;text-align:center;">Compensación</td>
+        <td style="font-size:10px;text-align:center;">**Especificar &nbsp;<span class="ck" id="pr_ck_comp"></span></td>
+        <td style="font-size:10px;text-align:center;">Duelo/<br>Cumpleaños &nbsp;<span class="ck" id="pr_ck_duelo"></span></td>
+        <td style="font-size:10px;text-align:center;">Comisión &nbsp;<span class="ck" id="pr_ck_com"></span></td>
+        <td colspan="3" style="font-size:10px;">** Especificar: &nbsp;<span id="pr_especificar"></span></td>
+      </tr>
+
+      <!-- Iguales o mayores a un día -->
+      <tr>
+        <td class="ptS" colspan="2">Iguales o mayores a un día:</td>
+        <td colspan="2" style="font-size:10px;">Del día (dd/mm/aa): &nbsp;<strong id="pr_desde"></strong></td>
+        <td colspan="3" style="font-size:10px;">Al día (dd/mm/aa): &nbsp;<strong id="pr_hasta"></strong></td>
+      </tr>
+
+      <!-- Observaciones -->
+      <tr>
+        <td class="ptL">Observaciones:</td>
+        <td class="ptV" colspan="6" id="pr_obs" style="min-height:36px;padding:6px;"></td>
+      </tr>
+      <tr><td colspan="7" style="height:26px;border-top:none;"></td></tr>
+    </table>
+
+    <!-- Fecha La Paz -->
+    <div style="margin-top:10px;font-size:12px;" id="pr_lapaz"></div>
+
+    <!-- Firmas -->
+    <div class="psigs">
+      <div class="psig">
+        <div style="border-top:1px dotted #444;padding-top:4px;">
+          <div class="psig-line">SERVIDOR PÚBLICO</div>
+          <div style="font-size:9px;margin-top:2px;" id="pr_firmante"></div>
+        </div>
+      </div>
+      <div class="psig">
+        <div style="border-top:1px dotted #444;padding-top:4px;">
+          <div class="psig-line">JEFE INMEDIATO SUPERIOR</div>
+          <div style="font-size:9px;margin-top:2px;" id="pr_jefe_print"></div>
+        </div>
+      </div>
+      <div class="psig">
+        <div style="border-top:1px dotted #444;padding-top:4px;">
+          <div class="psig-line">Vo. Bo. RECURSOS HUMANOS</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pnote">* Se deberá presentar el certificado médico correspondiente</div>
+  </div>
+</div>
+
+<input type="file" id="fileImport" accept=".csv" style="display:none" onchange="handleImport(this)">
+
+<script src="js/app.js"></script>
+<script>
+AUTH.require();
+document.getElementById('sidebarContainer').innerHTML = renderSidebar('boletas');
+document.getElementById('topbarContainer').innerHTML  = renderTopbar('Boletas de Salida','Control de Permisos y Salidas');
+
+const DIAS_ES   = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+const MESES_ES  = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const COLS = [
+  {key:'fecha',label:'Fecha'},{key:'nombre',label:'Nombre Funcionario'},
+  {key:'ci',label:'CI'},{key:'unidad',label:'Unidad Area'},{key:'cargo',label:'Cargo'},
+  {key:'item',label:'N Item'},{key:'tipo',label:'Tipo Salida'},
+  {key:'duracionHrs',label:'Duracion Hrs'},{key:'duracionDias',label:'Duracion Dias'},
+  {key:'horaSalida',label:'Hora Salida'},{key:'horaRetorno',label:'Hora Retorno'},
+  {key:'diasDesde',label:'Desde'},{key:'diasHasta',label:'Hasta'},
+  {key:'jefeInmediato',label:'Jefe Inmediato'},{key:'observaciones',label:'Observaciones'}
+];
+
+let editId=null, currentPage=1;
+const perPage=12;
+const now=new Date();
+document.getElementById('periodoInfo').textContent =
+  `Año: ${now.getFullYear()} | Mes: ${now.toLocaleString('es',{month:'long'})}`;
+
+/* ---- CUPO ---- */
+function calcHrsUsadas(ci, mesAnio, excId) {
+  return DB.get('boletas')
+    .filter(b=>b.ci===ci && b.tipo==='Hrs. Adm.' && b.fecha && b.fecha.startsWith(mesAnio) && b.id!==excId)
+    .reduce((s,b)=>s+(Number(b.duracionHrs)||0), 0);
+}
+function calcDiasUsados(ci, anio, excId) {
+  return DB.get('boletas')
+    .filter(b=>b.ci===ci && (b.tipo==='Días Administ.'||b.tipo==='2 Días Administ.') && b.fecha && b.fecha.startsWith(anio) && b.id!==excId)
+    .reduce((s,b)=>s+(Number(b.duracionDias)||Number(b.dias)||0), 0);
+}
+
+/* ---- TOGGLE FIELDS ---- */
+function toggleTipoFields() {
+  const tipo    = document.getElementById('f_tipo').value;
+  const esHrs   = tipo==='Hrs. Adm.';
+  const esDias  = tipo==='Días Administ.'||tipo==='2 Días Administ.';
+  const esHorario = !esDias;
+  document.getElementById('grpDurHrs').style.display    = esHrs    ? 'block' : 'none';
+  document.getElementById('grpDurDias').style.display   = esDias   ? 'block' : 'none';
+  document.getElementById('grpHorario').style.display   = esHorario? 'block' : 'none';
+  document.getElementById('grpRangoDias').style.display = esDias   ? 'block' : 'none';
+  updateQuota();
+}
+
+/* ---- CUPO EN TIEMPO REAL ---- */
+function updateQuota() {
+  const ci    = document.getElementById('f_ci').value.trim();
+  const tipo  = document.getElementById('f_tipo').value;
+  const fecha = document.getElementById('f_fecha').value;
+  const qI    = document.getElementById('quotaInfo');
+  const qA    = document.getElementById('alertaCupo');
+
+  const esHrs  = tipo==='Hrs. Adm.';
+  const esDias = tipo==='Días Administ.'||tipo==='2 Días Administ.';
+
+  if(!ci||!fecha||(!esHrs&&!esDias)){qI.style.display='none';qA.style.display='none';return;}
+
+  if(esHrs){
+    const mesAnio = fecha.substring(0,7);
+    const usadas  = calcHrsUsadas(ci, mesAnio, editId);
+    const selDur  = Number(document.getElementById('f_durHrs').value)||0;
+    const rest    = +(2-usadas).toFixed(1);
+    const ok      = rest > 0 && (!selDur||selDur<=rest);
+    qI.style.display    = 'block';
+    qI.style.background = ok?'#e8f5e9':'#fff3e0';
+    qI.style.border     = `1px solid ${ok?'#81c784':'#ffb74d'}`;
+    qI.style.color      = ok?'#2e7d32':'#e65100';
+    qI.innerHTML = `⏱️ Horas Adm. usadas este mes: <strong>${usadas.toFixed(1)}</strong> de 2 hrs
+      &nbsp;—&nbsp; Disponibles: <strong>${rest} hr${rest===1?'':'s'}</strong>
+      ${selDur&&selDur>rest?' &nbsp;⚠️ Duración seleccionada supera el cupo':''}`;
+    if(rest<=0){
+      qA.style.display='block';
+      qA.innerHTML='⚠️ <strong>Cupo agotado:</strong> Este funcionario ya utilizó sus 2 horas administrativas este mes.';
+    } else { qA.style.display='none'; }
+  } else {
+    const anio   = fecha.substring(0,4);
+    const usados = calcDiasUsados(ci, anio, editId);
+    const selDur = Number(document.getElementById('f_durDias').value)||0;
+    const rest   = +(2-usados).toFixed(1);
+    const ok     = rest>0&&(!selDur||selDur<=rest);
+    qI.style.display    = 'block';
+    qI.style.background = ok?'#e8f5e9':'#fff3e0';
+    qI.style.border     = `1px solid ${ok?'#81c784':'#ffb74d'}`;
+    qI.style.color      = ok?'#2e7d32':'#e65100';
+    qI.innerHTML = `📅 Días Adm. usados este año: <strong>${usados}</strong> de 2 días
+      &nbsp;—&nbsp; Disponibles: <strong>${rest} día${rest===1?'':'s'}</strong>
+      ${selDur&&selDur>rest?' &nbsp;⚠️ Duración seleccionada supera el cupo':''}`;
+    if(rest<=0){
+      qA.style.display='block';
+      qA.innerHTML='⚠️ <strong>Cupo agotado:</strong> Este funcionario ya utilizó sus 2 días administrativos este año.';
+    } else { qA.style.display='none'; }
+  }
+}
+
+/* ---- STATS ---- */
+function renderStats(){
+  const data    = DB.get('boletas');
+  const mes     = String(now.getMonth()+1).padStart(2,'0');
+  const anio    = String(now.getFullYear());
+  const mesAnio = anio+'-'+mes;
+  const hrsAdm  = data.filter(b=>b.tipo==='Hrs. Adm.'&&b.fecha&&b.fecha.startsWith(mesAnio))
+    .reduce((s,b)=>s+(Number(b.duracionHrs)||0),0);
+  const diasAdm = data.filter(b=>(b.tipo==='Días Administ.'||b.tipo==='2 Días Administ.')&&b.fecha&&b.fecha.startsWith(anio))
+    .reduce((s,b)=>s+(Number(b.duracionDias)||Number(b.dias)||0),0);
+  const unicas  = new Set(data.map(b=>b.ci)).size;
+  document.getElementById('statsGrid').innerHTML=`
+    <div class="stat-card"><div class="stat-icon red">📋</div><div><div class="stat-value">${data.length}</div><div class="stat-label">Total Boletas</div></div></div>
+    <div class="stat-card"><div class="stat-icon blue">👤</div><div><div class="stat-value">${unicas}</div><div class="stat-label">Funcionarios</div></div></div>
+    <div class="stat-card"><div class="stat-icon orange">⏰</div><div><div class="stat-value">${hrsAdm.toFixed(1)} hrs</div><div class="stat-label">Hrs. Adm. este mes</div></div></div>
+    <div class="stat-card"><div class="stat-icon green">📅</div><div><div class="stat-value">${diasAdm} días</div><div class="stat-label">Días Adm. este año</div></div></div>`;
+}
+
+/* ---- TABLE ---- */
+function getData(){
+  let d=DB.get('boletas');
+  const q=document.getElementById('searchInput').value.trim();
+  const ft=document.getElementById('filtTipo').value;
+  const fu=document.getElementById('filtUnidad').value;
+  const fm=document.getElementById('filtMes').value;
+  if(q)  d=filterData(d,q,['nombre','ci','cargo','unidad']);
+  if(ft) d=d.filter(b=>b.tipo===ft);
+  if(fu) d=d.filter(b=>b.unidad===fu);
+  if(fm) d=d.filter(b=>b.fecha&&b.fecha.substring(5,7)===fm);
+  return d;
+}
+
+function durLabel(b){
+  const tipo=b.tipo||'';
+  const esDias=tipo==='Días Administ.'||tipo==='2 Días Administ.';
+  if(esDias){
+    const d=Number(b.duracionDias||b.dias||0);
+    return d===0.5?'Medio día':d?`${d} día${d===1?'':'s'}`:'—';
+  }
+  if(tipo==='Hrs. Adm.'){
+    const h=Number(b.duracionHrs||0);
+    const htxt=h===0.5?'30 min':h===1?'1 hr':h===1.5?'1:30 hr':h===2?'2 hr':h?`${h} hr`:'';
+    const hor=b.horaSalida&&b.horaRetorno?`<br><small style="color:#888;">${b.horaSalida}–${b.horaRetorno}</small>`:'';
+    return htxt+hor;
+  }
+  return b.horaSalida&&b.horaRetorno?`${b.horaSalida}–${b.horaRetorno}`:'—';
+}
+
+const TIPO_COLOR={
+  'Hrs. Adm.':'badge-info','Médico':'badge-success','Particular/Otro':'badge-secondary',
+  'Particular':'badge-secondary','Días Administ.':'badge-warning','2 Días Administ.':'badge-warning',
+  'Compensación':'badge-primary','Comisión':'badge-secondary','Duelo/Cumpleaños':'badge-secondary'
+};
+
+function renderTable(){
+  const data=getData(), total=data.length;
+  const pages=Math.max(1,Math.ceil(total/perPage));
+  if(currentPage>pages) currentPage=1;
+  const slice=data.slice((currentPage-1)*perPage, currentPage*perPage);
+  document.getElementById('countBadge').textContent=`${total} registros`;
+  document.getElementById('tableBody').innerHTML=slice.length?slice.map(b=>`<tr>
+    <td style="white-space:nowrap;">${formatDate(b.fecha)}</td>
+    <td>${escHtml(b.nombre||'—')}</td>
+    <td style="white-space:nowrap;">${escHtml(b.ci||'—')}</td>
+    <td style="font-size:12px;">${escHtml(b.unidad||'—')}</td>
+    <td style="font-size:12px;">${escHtml(b.cargo||'—')}</td>
+    <td style="text-align:center;">${escHtml(b.item||'—')}</td>
+    <td><span class="badge ${TIPO_COLOR[b.tipo]||'badge-secondary'}">${escHtml(b.tipo||'—')}</span></td>
+    <td style="font-size:12px;">${durLabel(b)}</td>
+    <td style="font-size:12px;">${escHtml(b.jefeInmediato||'—')}</td>
+    <td style="font-size:12px;">${escHtml((b.observaciones||'').substring(0,28))}</td>
+    <td><div class="table-actions">
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="printBoleta(${b.id})" title="Imprimir">🖨️</button>
+      <button class="btn btn-info btn-sm btn-icon" onclick="openForm(${b.id})" title="Editar">✏️</button>
+      <button class="btn btn-danger btn-sm btn-icon" onclick="deleteRec(${b.id})" title="Eliminar">🗑️</button>
+    </div></td>
+  </tr>`).join(''):`<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Sin boletas</div></div></td></tr>`;
+
+  let pg='';
+  if(pages>1){
+    if(currentPage>1) pg+=`<button class="page-btn" onclick="goPage(${currentPage-1})">‹</button>`;
+    for(let i=1;i<=pages;i++) pg+=`<button class="page-btn${i===currentPage?' active':''}" onclick="goPage(${i})">${i}</button>`;
+    if(currentPage<pages) pg+=`<button class="page-btn" onclick="goPage(${currentPage+1})">›</button>`;
+  }
+  pg+=`<span class="page-info">${(currentPage-1)*perPage+1}-${Math.min(currentPage*perPage,total)} de ${total}</span>`;
+  document.getElementById('paginationBar').innerHTML=pg;
+}
+function goPage(p){currentPage=p;renderTable();}
+
+/* ---- FORM ---- */
+function openForm(id=null){
+  editId=id;
+  document.getElementById('modalFormTitle').textContent=id?'Editar Boleta':'Nueva Boleta de Salida';
+  const ids=['f_fecha','f_item','f_nombre','f_ci','f_cargo','f_obs','f_horaSal','f_horaRet','f_diasDesde','f_diasHasta','f_jefe'];
+  if(id){
+    const r=DB.get('boletas').find(b=>b.id===id);
+    if(r){
+      document.getElementById('f_fecha').value    =r.fecha||'';
+      document.getElementById('f_item').value     =r.item||'';
+      document.getElementById('f_nombre').value   =r.nombre||'';
+      document.getElementById('f_ci').value       =r.ci||'';
+      document.getElementById('f_cargo').value    =r.cargo||'';
+      document.getElementById('f_unidad').value   =r.unidad||'';
+      document.getElementById('f_tipo').value     =r.tipo||'';
+      document.getElementById('f_durHrs').value   =r.duracionHrs||'';
+      document.getElementById('f_durDias').value  =r.duracionDias||r.dias||'';
+      document.getElementById('f_horaSal').value  =r.horaSalida||'';
+      document.getElementById('f_horaRet').value  =r.horaRetorno||'';
+      document.getElementById('f_diasDesde').value=r.diasDesde||'';
+      document.getElementById('f_diasHasta').value=r.diasHasta||'';
+      document.getElementById('f_jefe').value     =r.jefeInmediato||'';
+      document.getElementById('f_obs').value      =r.observaciones||'';
+    }
+  } else {
+    ids.forEach(i=>document.getElementById(i).value='');
+    ['f_unidad','f_tipo','f_durHrs','f_durDias'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('f_fecha').value=today();
+    document.getElementById('quotaInfo').style.display='none';
+    document.getElementById('alertaCupo').style.display='none';
+  }
+  toggleTipoFields();
+  document.getElementById('modalForm').style.display='flex';
+}
+function closeForm(){document.getElementById('modalForm').style.display='none';editId=null;}
+
+/* ---- SAVE ---- */
+function saveRecord(){
+  const tipo   =document.getElementById('f_tipo').value;
+  const esDias =tipo==='Días Administ.'||tipo==='2 Días Administ.';
+  const esHrs  =tipo==='Hrs. Adm.';
+  const fecha  =document.getElementById('f_fecha').value;
+  const nombre =document.getElementById('f_nombre').value.trim();
+  const ci     =document.getElementById('f_ci').value.trim();
+  if(!nombre||!ci||!tipo||!fecha){toast('Complete los campos requeridos','error');return;}
+  if(esHrs&&!document.getElementById('f_durHrs').value){toast('Seleccione la duración de horas administrativas','error');return;}
+  if(esDias&&!document.getElementById('f_durDias').value){toast('Seleccione la duración de días administrativos','error');return;}
+
+  const rec={
+    id:          editId||DB.nextId('boletas'),
+    fecha,nombre,ci,
+    item:        document.getElementById('f_item').value,
+    unidad:      document.getElementById('f_unidad').value,
+    cargo:       document.getElementById('f_cargo').value,
+    tipo,
+    duracionHrs: esHrs  ? Number(document.getElementById('f_durHrs').value)||'' : '',
+    duracionDias:esDias ? Number(document.getElementById('f_durDias').value)||'': '',
+    horaSalida:  !esDias? document.getElementById('f_horaSal').value :'',
+    horaRetorno: !esDias? document.getElementById('f_horaRet').value :'',
+    diasDesde:   esDias ? document.getElementById('f_diasDesde').value:'',
+    diasHasta:   esDias ? document.getElementById('f_diasHasta').value:'',
+    jefeInmediato:document.getElementById('f_jefe').value,
+    observaciones:document.getElementById('f_obs').value
+  };
+  let data=DB.get('boletas');
+  if(editId){data=data.map(b=>b.id===editId?rec:b);}else{data.push(rec);}
+  DB.set('boletas',data);
+  closeForm();renderStats();renderTable();toast('Boleta guardada','success');
+}
+
+/* ---- PRINT ---- */
+function printBoleta(id){
+  const b=DB.get('boletas').find(x=>x.id===id);
+  if(!b){toast('Boleta no encontrada','error');return;}
+  const tipo  =b.tipo||'';
+  const esDias=tipo==='Días Administ.'||tipo==='2 Días Administ.';
+
+  document.getElementById('pr_nombre').textContent    =b.nombre||'';
+  document.getElementById('pr_ci').textContent        =b.ci||'';
+  document.getElementById('pr_unidad').textContent    =b.unidad||'';
+  document.getElementById('pr_cargo').textContent     =b.cargo||'';
+  document.getElementById('pr_item').textContent      =b.item||'';
+  document.getElementById('pr_obs').textContent       =b.observaciones||'';
+  document.getElementById('pr_firmante').textContent  =b.nombre||'';
+  document.getElementById('pr_jefe_print').textContent=b.jefeInmediato||'';
+
+  // Fecha formateada
+  document.getElementById('pr_fecha').textContent=b.fecha?formatDate(b.fecha):'';
+
+  // Horario
+  document.getElementById('pr_de').textContent=b.horaSalida||'';
+  document.getElementById('pr_a').textContent =b.horaRetorno||'';
+
+  // Rango días (dd/mm/aa)
+  const toDMY=d=>d?d.split('-').reverse().join('/'):'';
+  document.getElementById('pr_desde').textContent=toDMY(b.diasDesde||'');
+  document.getElementById('pr_hasta').textContent=toDMY(b.diasHasta||'');
+
+  // Checkmarks
+  const X='X', _='';
+  document.getElementById('pr_ck_part').textContent =(tipo==='Particular/Otro'||tipo==='Particular')?X:_;
+  document.getElementById('pr_ck_med').textContent  =tipo==='Médico'?X:_;
+  document.getElementById('pr_ck_hrs').textContent  =tipo==='Hrs. Adm.'?X:_;
+  document.getElementById('pr_ck_comp').textContent =tipo==='Compensación'?X:_;
+  document.getElementById('pr_ck_duelo').textContent=tipo==='Duelo/Cumpleaños'?X:_;
+  document.getElementById('pr_ck_com').textContent  =tipo==='Comisión'?X:_;
+  // Días con duración
+  const durD=esDias?(Number(b.duracionDias)||Number(b.dias)||''):0;
+  document.getElementById('pr_ck_dias').textContent =esDias?(durD===0.5?'X ½ día':durD?`X ${durD} día${durD===1?'':'s'}`:X):_;
+  // Especificar (compensación/comisión)
+  document.getElementById('pr_especificar').textContent=(tipo==='Compensación'||tipo==='Comisión')?(b.observaciones||''):'';
+
+  // Fecha La Paz
+  let lapaz='';
+  if(b.fecha){
+    const d=new Date(b.fecha+'T12:00:00');
+    lapaz=`La Paz, ${DIAS_ES[d.getDay()]}, ${d.getDate()} de ${MESES_ES[d.getMonth()]} de ${d.getFullYear()}`;
+  }
+  document.getElementById('pr_lapaz').textContent=lapaz;
+
+  // Duración hrs. adm. en la sección menores a un día
+  if(tipo==='Hrs. Adm.'&&b.duracionHrs){
+    const h=Number(b.duracionHrs);
+    const hTxt=h===0.5?'30 min':h===1?'1 hr':h===1.5?'1 hr 30 min':h===2?'2 hr':`${h} hr`;
+    document.getElementById('pr_ck_hrs').textContent=`X (${hTxt})`;
+  }
+
+  document.body.classList.add('printing');
+  window.print();
+  window.addEventListener('afterprint',()=>document.body.classList.remove('printing'),{once:true});
+}
+
+/* ---- DELETE ---- */
+function deleteRec(id){
+  if(confirm('¿Eliminar esta boleta?')){
+    DB.set('boletas',DB.get('boletas').filter(b=>b.id!==id));
+    renderStats();renderTable();toast('Eliminada','success');
+  }
+}
+
+/* ---- EXPORT / IMPORT ---- */
+function doExport(){exportXLSX(getData(),'Boletas de Salida','Boletas-Salida_'+new Date().toISOString().slice(0,10)+'.xlsx',COLS);}
+function triggerImport(){document.getElementById('fileImport').click();}
+function handleImport(inp){
+  importCSV(inp.files[0],COLS,function(records){
+    const existing=DB.get('boletas');
+    const maxId=existing.length?Math.max(...existing.map(o=>o.id||0)):0;
+    records.forEach((r,i)=>{r.id=maxId+i+1;});
+    DB.set('boletas',[...existing,...records]);renderStats();renderTable();
+  });
+  inp.value='';
+}
+
+renderStats(); renderTable();
+</script>
+</body>
+</html>

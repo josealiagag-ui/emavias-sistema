@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMAVIAS - Detalle de Obra</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.obra-hero { background:linear-gradient(135deg,#8B1A1A,#b02020); color:#fff; border-radius:12px; padding:24px 28px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; }
+.obra-hero-title { font-size:24px; font-weight:900; margin:0 0 4px; }
+.obra-hero-sub { font-size:14px; opacity:.85; }
+.obra-hero-badges { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.obra-hero-badge { background:rgba(255,255,255,.2); border-radius:20px; padding:4px 14px; font-size:12px; font-weight:600; }
+.hero-stats { display:flex; gap:24px; flex-wrap:wrap; }
+.hero-stat { text-align:center; }
+.hero-stat-val { font-size:28px; font-weight:900; line-height:1; }
+.hero-stat-label { font-size:11px; opacity:.75; margin-top:2px; }
+
+.section-card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:20px 24px; margin-bottom:16px; }
+.section-card h3 { font-size:14px; font-weight:700; color:#8B1A1A; border-bottom:2px solid #f3e8e8; padding-bottom:8px; margin:0 0 16px; display:flex; align-items:center; gap:8px; }
+
+/* Tabla de registros diarios */
+.reg-table { width:100%; border-collapse:collapse; font-size:13px; }
+.reg-table th { background:#f8f8f8; padding:8px 10px; text-align:left; font-size:11px; color:#666; border-bottom:2px solid #e5e7eb; white-space:nowrap; }
+.reg-table td { padding:8px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+.reg-table tr:last-child td { border-bottom:none; }
+.reg-table tr:hover td { background:#fafafa; }
+.num-cell { text-align:right; font-family:monospace; font-weight:600; color:#8B1A1A; }
+.zero-cell { text-align:right; color:#ccc; }
+
+/* Grid de recursos */
+.res-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px; }
+.res-item { display:flex; justify-content:space-between; align-items:center; background:#fafafa; border:1px solid #eee; border-radius:6px; padding:9px 14px; }
+.res-name { font-size:12px; color:#555; }
+.res-val { font-size:14px; font-weight:700; color:#8B1A1A; font-family:monospace; }
+.res-val.zero { color:#ccc; font-weight:400; font-size:12px; }
+.res-unit { font-size:11px; color:#888; margin-left:3px; }
+
+.back-row { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+.table-wrapper-scroll { overflow-x:auto; }
+</style>
+</head>
+<body>
+<div id="sidebarContainer"></div>
+<div class="main-content">
+  <div id="topbarContainer"></div>
+  <div class="page-content">
+
+    <div class="back-row">
+      <a href="obras.html" class="btn btn-outline btn-sm">← Volver al Registro</a>
+      <span id="addRegBtn"></span>
+    </div>
+
+    <div id="heroSection"></div>
+    <div id="detailContent"></div>
+
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+AUTH.require();
+document.getElementById('sidebarContainer').innerHTML = renderSidebar('obras');
+document.getElementById('topbarContainer').innerHTML = renderTopbar('Detalle de Obra','Plan de Asfaltos 2025-2026');
+
+const params = new URLSearchParams(location.search);
+const codigo = decodeURIComponent(params.get('codigo')||'');
+
+const todasObras = DB.get('obras');
+const registros = todasObras.filter(o=>(o.codigo||'').trim()===codigo);
+
+if(!codigo || registros.length===0) {
+  document.getElementById('detailContent').innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Obra no encontrada</div><div class="empty-desc">No se encontraron registros para el código "${escHtml(codigo||'?')}".</div></div>`;
+} else {
+
+  // Botón agregar nuevo registro para esta obra
+  document.getElementById('addRegBtn').innerHTML = `<a href="form-obra.html" class="btn btn-primary btn-sm">➕ Nuevo Registro</a>`;
+
+  // Calcular totales agregados
+  const sumField = (key) => registros.reduce((s,o)=>s+(Number(o[key])||0),0);
+  const uniqVals = (key) => [...new Set(registros.map(o=>o[key]).filter(Boolean))];
+
+  const totalArea     = sumField('area');
+  const totalMezcla   = sumField('cantMezcla');
+  const totalBacheo   = sumField('cantBacheo');
+  const totalBase     = sumField('cantBase');
+  const totalLigante  = sumField('cantLigante');
+  const totalAluvial  = sumField('cantAluvial');
+  const totalPiedra   = sumField('cantPiedra');
+  const totalArena    = sumField('cantArena');
+  const totalCemento  = sumField('cantCemento');
+  const totalGasolina = sumField('cantGasolina');
+  const totalDiesel   = sumField('cantDiesel');
+  const totalPersonal = sumField('personal');
+  const totalHoras    = sumField('horas');
+  const MAQ_KEYS = ['hrsTerminadora','hrsRodilloLiso','hrsRodilloNeuma','hrsRetroex','hrsMotoNivel',
+    'hrsTracto','hrsPlancha','hrsCisterna','hrsSopladora','hrsVibro','hrsMezcladora',
+    'hrsMartillo','hrsAmoladora','hrsVolquetas','hrsCanter','hrsCamionImp'];
+  const MAQ_LABELS = ['Terminadora','Rodillo Liso','Rodillo Neumático','Retroexcavadora','Motoniveladora',
+    'Tracto Camión','Plancha Vibradora','Cisterna','Sopladora','Vibroapisonador','Mezcladora',
+    'Martillo Percutor','Amoladora','Volquetas','Canter','Camión Imprimador'];
+  const totalHrsMaq = MAQ_KEYS.reduce((s,k)=>s+sumField(k),0);
+
+  const tipos   = uniqVals('tipo');
+  const unidades= uniqVals('unidad');
+  const grupos  = uniqVals('grupo');
+  const r0 = registros[0];
+
+  // HERO
+  document.getElementById('heroSection').innerHTML = `
+  <div class="obra-hero">
+    <div>
+      <div class="obra-hero-title">🏗️ ${escHtml(codigo)}</div>
+      <div class="obra-hero-sub">${escHtml(r0.ubicacion||'')}${r0.zona?` — ${escHtml(r0.zona)}`:''}</div>
+      <div class="obra-hero-badges">
+        ${unidades.map(u=>`<span class="obra-hero-badge">${escHtml(u)}</span>`).join('')}
+        ${tipos.map(t=>`<span class="obra-hero-badge">${escHtml(t)}</span>`).join('')}
+        ${grupos.map(g=>`<span class="obra-hero-badge">${escHtml(g)}</span>`).join('')}
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="hero-stat-val">${formatNumber(totalArea,0)}</div><div class="hero-stat-label">m² Total</div></div>
+      <div class="hero-stat"><div class="hero-stat-val">${registros.length}</div><div class="hero-stat-label">Registros</div></div>
+      <div class="hero-stat"><div class="hero-stat-val">${formatNumber(totalMezcla+totalBacheo+totalBase,2)}</div><div class="hero-stat-label">m³ Mezcla</div></div>
+    </div>
+  </div>`;
+
+  // --- Tabla de registros diarios ---
+  const filas = registros.map(o=>{
+    const a = Number(o.area)||0;
+    const m = Number(o.cantMezcla)||0;
+    const d = Number(o.cantDiesel)||0;
+    const p = Number(o.personal)||0;
+    return `<tr>
+      <td>${formatDate(o.fecha)}</td>
+      <td><span class="badge badge-secondary">${escHtml(o.tipo||'-')}</span></td>
+      <td>${escHtml(o.grupo||'-')}</td>
+      <td class="${a?'num-cell':'zero-cell'}">${a?formatNumber(a,2):'—'}</td>
+      <td class="${m?'num-cell':'zero-cell'}">${m?formatNumber(m,2):'—'}</td>
+      <td>${o.boletaMezcla?escHtml(o.boletaMezcla):'<span style="color:#bbb">—</span>'}</td>
+      <td class="${d?'num-cell':'zero-cell'}">${d?formatNumber(d,0):'—'}</td>
+      <td class="${p?'num-cell':'zero-cell'}">${p||'—'}</td>
+      <td style="text-align:center;">
+        <div class="table-actions" style="justify-content:center;">
+          <a href="form-obra.html?id=${o.id}" class="btn btn-info btn-sm btn-icon" title="Editar">✏️</a>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // --- Grid de recursos con totales ---
+  function resItem(name, val, unit, dec) {
+    const v = Number(val)||0;
+    return `<div class="res-item"><span class="res-name">${name}</span><span class="res-val${v===0?' zero':''}">${v===0?'—':formatNumber(v,dec!==undefined?dec:2)}<span class="res-unit">${v===0?'':unit}</span></span></div>`;
+  }
+
+  const maqItems = MAQ_KEYS.map((k,i)=>resItem(MAQ_LABELS[i], sumField(k), 'hrs')).join('');
+
+  document.getElementById('detailContent').innerHTML = `
+
+  <!-- Registros diarios -->
+  <div class="section-card">
+    <h3>📅 Registros de Trabajo (${registros.length})</h3>
+    <div class="table-wrapper-scroll">
+      <table class="reg-table">
+        <thead><tr>
+          <th>Fecha</th><th>Tipo</th><th>Grupo</th>
+          <th style="text-align:right;">Área m²</th>
+          <th style="text-align:right;">Mezcla m³</th>
+          <th>N° Boleta</th>
+          <th style="text-align:right;">Diesel Lts</th>
+          <th style="text-align:right;">Personal</th>
+          <th style="text-align:center;">Acc.</th>
+        </tr></thead>
+        <tbody>${filas}</tbody>
+        <tfoot>
+          <tr style="background:#f8f8f8;font-weight:700;">
+            <td colspan="3" style="padding:8px 10px;color:#555;">TOTALES</td>
+            <td class="num-cell" style="padding:8px 10px;">${formatNumber(totalArea,2)}</td>
+            <td class="num-cell" style="padding:8px 10px;">${formatNumber(totalMezcla,2)}</td>
+            <td></td>
+            <td class="num-cell" style="padding:8px 10px;">${formatNumber(totalDiesel,0)}</td>
+            <td class="num-cell" style="padding:8px 10px;">${totalPersonal}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Materiales totales -->
+  <div class="section-card">
+    <h3>🏭 Materiales Utilizados — Totales</h3>
+    <div class="res-grid">
+      ${resItem('Mezcla Asfáltica', totalMezcla, 'm³')}
+      ${resItem('Bacheo (Mezcla)', totalBacheo, 'm³')}
+      ${resItem('Capa Base', totalBase, 'm³')}
+      ${resItem('Ligante Asfáltico', totalLigante, 'Lts', 0)}
+      ${resItem('Mat. Aluvial', totalAluvial, 'm³')}
+      ${resItem('Piedra Manzana', totalPiedra, 'm³')}
+      ${resItem('Arena', totalArena, 'm³')}
+      ${resItem('Cemento', totalCemento, 'Bls', 0)}
+      ${resItem('Gasolina', totalGasolina, 'Lts', 0)}
+      ${resItem('Diesel', totalDiesel, 'Lts', 0)}
+    </div>
+  </div>
+
+  <!-- Maquinaria totales -->
+  <div class="section-card">
+    <h3>🚧 Maquinaria y Equipos — Horas Totales <span style="font-weight:400;color:#888;">(${formatNumber(totalHrsMaq,2)} hrs en total)</span></h3>
+    <div class="res-grid">${maqItems}</div>
+  </div>
+
+  <!-- Personal -->
+  <div class="section-card">
+    <h3>👷 Personal en Obra</h3>
+    <div class="res-grid">
+      ${resItem('Total Personal-Día', totalPersonal, 'personas', 0)}
+      ${resItem('Total Horas Trabajadas', totalHoras, 'hrs')}
+    </div>
+  </div>
+
+  `;
+}
+</script>
+</body>
+</html>
