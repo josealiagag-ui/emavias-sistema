@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EMAVIAS — Feriados y Calendario</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+/* Calendar */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #eee;}
+.cal-month{font-size:18px;font-weight:700;color:#8B1A1A;}
+.cal-nav-btn{background:none;border:1.5px solid #ddd;border-radius:7px;padding:5px 14px;cursor:pointer;font-size:16px;color:#555;}
+.cal-nav-btn:hover{background:#f5f5f5;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0;}
+.cal-dow{text-align:center;padding:10px 0;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;border-bottom:1px solid #eee;}
+.cal-dow.weekend{color:#8B1A1A;}
+.cal-day{min-height:90px;padding:8px;border-right:1px solid #f0f0f0;border-bottom:1px solid #f0f0f0;position:relative;cursor:pointer;transition:background .15s;}
+.cal-day:hover{background:#fdf8f8;}
+.cal-day.other-month{background:#f9f9f9;} .cal-day.other-month .cal-day-num{color:#ccc;}
+.cal-day.today{background:#fff8f0;} .cal-day.today .cal-day-num{background:#8B1A1A;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;}
+.cal-day.feriado{background:#fce4e4;}
+.cal-day.weekend-day{background:#f5f8ff;}
+.cal-day-num{font-size:13px;font-weight:700;color:#333;margin-bottom:4px;}
+.cal-entry{background:#8B1A1A;color:#fff;border-radius:4px;padding:2px 5px;font-size:10px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cal-entry.sdf{background:#b85c00;}
+.cal-entry.feriado-badge{background:#c00;font-size:9px;}
+.feriado-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:14px;font-size:12px;font-weight:600;}
+.f-nac{background:#fce4e4;color:#8B1A1A;border:1px solid #e9a0a0;}
+.f-dep{background:#fff3e0;color:#b85c00;border:1px solid #f0c060;}
+.add-form{display:grid;grid-template-columns:150px 1fr auto auto;gap:10px;align-items:end;padding:16px 20px;background:#f9f9f9;border-top:1px solid #eee;}
+.add-form input,.add-form select{padding:8px 12px;border:1.5px solid #ddd;border-radius:7px;font-size:13px;font-family:inherit;}
+.add-form input:focus,.add-form select:focus{outline:none;border-color:#8B1A1A;}
+</style>
+</head>
+<body>
+<div id="sidebarContainer"></div>
+<div class="main-content">
+  <div id="topbarContainer"></div>
+  <div class="page-content">
+
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb"><span>EMAVIAS</span><span class="breadcrumb-sep">›</span><span><a href="horas-extra.html" style="color:inherit;">Horas Extra</a></span><span class="breadcrumb-sep">›</span><span>Feriados</span></div>
+        <div class="page-title">📅 Feriados y Calendario</div>
+        <div class="page-subtitle">Feriados nacionales y departamentales — La Paz, Bolivia</div>
+      </div>
+      <div class="page-actions">
+        <a href="horas-extra.html" class="btn btn-secondary btn-sm">← Volver a Horas Extra</a>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;align-items:start;">
+
+      <!-- CALENDARIO -->
+      <div class="card">
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="prevMonth()">‹</button>
+          <div>
+            <div class="cal-month" id="calTitle">—</div>
+            <div style="font-size:11px;color:#888;text-align:center;" id="calSub">—</div>
+          </div>
+          <button class="cal-nav-btn" onclick="nextMonth()">›</button>
+        </div>
+        <div class="cal-grid" id="calDow"></div>
+        <div class="cal-grid" id="calBody"></div>
+        <div style="padding:12px 16px;background:#f9f9f9;border-top:1px solid #eee;display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:#666;">
+          <span><span style="display:inline-block;width:10px;height:10px;background:#8B1A1A;border-radius:2px;margin-right:4px;"></span>Horas extra L/V</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#b85c00;border-radius:2px;margin-right:4px;"></span>Horas extra S/D/F</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#fce4e4;border:1px solid #e9a0a0;border-radius:2px;margin-right:4px;"></span>Feriado</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#f5f8ff;border:1px solid #c5d5f0;border-radius:2px;margin-right:4px;"></span>Fin de semana</span>
+        </div>
+      </div>
+
+      <!-- FERIADOS LISTA -->
+      <div class="card">
+        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+          <h3 style="margin:0;font-size:15px;">🎌 Feriados <span id="ferAnioLabel"></span></h3>
+          <div style="display:flex;gap:6px;">
+            <select id="ferAnio" class="filter-control" onchange="renderFeriados()" style="font-size:12px;padding:5px 8px;border:1.5px solid #ddd;border-radius:6px;">
+            </select>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0;max-height:420px;overflow-y:auto;">
+          <table class="table" style="margin:0;">
+            <thead><tr><th>Fecha</th><th>Feriado</th><th>Tipo</th><th></th></tr></thead>
+            <tbody id="ferBody"></tbody>
+          </table>
+        </div>
+        <!-- Agregar feriado -->
+        <div class="add-form">
+          <div>
+            <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">Fecha</label>
+            <input type="date" id="newFerFecha">
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">Nombre del Feriado</label>
+            <input type="text" id="newFerNombre" placeholder="Ej: Aniversario La Paz">
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px;">Tipo</label>
+            <select id="newFerTipo">
+              <option value="nacional">Nacional</option>
+              <option value="departamental">Departamental</option>
+              <option value="municipal">Municipal</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;opacity:0;display:block;margin-bottom:4px;">.</label>
+            <button class="btn btn-primary btn-sm" onclick="addFeriado()">➕ Agregar</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Leyenda reglas de cálculo -->
+    <div class="card" style="margin-top:18px;">
+      <div class="card-header"><h3 style="margin:0;font-size:15px;">📖 Reglas de Cálculo de Horas Extra</h3></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;font-size:13px;">
+          <div style="padding:16px;background:#e8f0ff;border-radius:10px;border-left:4px solid #003580;">
+            <div style="font-weight:700;color:#003580;margin-bottom:8px;font-size:14px;">💼 Horas L/V (×1)</div>
+            <p style="color:#555;line-height:1.7;margin:0;">Horas extras realizadas de <strong>Lunes a Viernes</strong> en horario diurno (6:00–20:00). Se contabilizan como <strong>1 hora por hora trabajada</strong>.</p>
+            <div style="margin-top:10px;background:#fff;border-radius:6px;padding:8px 10px;font-size:11px;color:#444;">
+              Ejemplo: trabajo 16:00–18:00 = <strong>2h L/V</strong> → 2h equivalentes
+            </div>
+          </div>
+          <div style="padding:16px;background:#fff3e0;border-radius:10px;border-left:4px solid #b85c00;">
+            <div style="font-weight:700;color:#b85c00;margin-bottom:8px;font-size:14px;">📅 Horas S/D/F (×2)</div>
+            <p style="color:#555;line-height:1.7;margin:0;">Horas realizadas en <strong>Sábado, Domingo o Feriado</strong>. Se contabilizan <strong>dobles: 1 hora trabajada = 2 horas</strong> reconocidas.</p>
+            <div style="margin-top:10px;background:#fff;border-radius:6px;padding:8px 10px;font-size:11px;color:#444;">
+              Ejemplo: trabajo 8:00–10:00 sábado = <strong>2h → 4h equivalentes</strong>
+            </div>
+          </div>
+          <div style="padding:16px;background:#f0f0f0;border-radius:10px;border-left:4px solid #555;">
+            <div style="font-weight:700;color:#333;margin-bottom:8px;font-size:14px;">🌙 Horas Nocturnas (×1.5)</div>
+            <p style="color:#555;line-height:1.7;margin:0;">Horas trabajadas de <strong>20:00 a 6:00</strong> (siguiente día). Cada hora vale <strong>1.5 horas</strong>. En S/D/F nocturno aplica ×3 (2×1.5).</p>
+            <div style="margin-top:10px;background:#fff;border-radius:6px;padding:8px 10px;font-size:11px;color:#444;">
+              Ejemplo: trabajo 21:00–23:00 = <strong>2h noct. → 3h equivalentes</strong>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:14px;padding:12px 16px;background:#fffde7;border-radius:8px;border-left:4px solid #f0c000;font-size:13px;color:#555;">
+          <strong>⏳ Compensaciones:</strong> Las horas de tipo <strong>C (Compensación)</strong> tienen un plazo máximo de <strong>90 días</strong> para ser utilizadas a partir de la fecha del registro. Las horas de tipo <strong>X (Extra pagado)</strong> se liquidan en la planilla del período.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+AUTH.require();
+document.getElementById('sidebarContainer').innerHTML = renderSidebar('horas-extra');
+document.getElementById('topbarContainer').innerHTML = renderTopbar('Feriados y Calendario','Gestión de feriados y visualización de horas extra');
+
+const MESES_ES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DIAS_ES=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
+
+/* ---- FERIADOS ---- */
+function buildFerAnios(){
+  const years=[...new Set(DB.get('feriados').map(f=>(f.fecha||'').slice(0,4)).filter(Boolean))].sort().reverse();
+  const curY=new Date().getFullYear();
+  if(!years.includes(String(curY))) years.unshift(String(curY));
+  const sel=document.getElementById('ferAnio');
+  sel.innerHTML='';
+  years.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;sel.appendChild(o);});
+  sel.value=String(curY);
+}
+
+function renderFeriados(){
+  const anio=document.getElementById('ferAnio').value;
+  document.getElementById('ferAnioLabel').textContent=anio;
+  const feriados=DB.get('feriados').filter(f=>(f.fecha||'').startsWith(anio)).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  document.getElementById('ferBody').innerHTML=feriados.length?feriados.map(f=>`<tr>
+    <td style="white-space:nowrap;font-weight:700;font-size:12px;">${formatDate(f.fecha)}</td>
+    <td style="font-size:12px;">${escHtml(f.nombre)}</td>
+    <td><span class="feriado-tag ${f.tipo==='nacional'?'f-nac':'f-dep'}">${f.tipo==='nacional'?'Nacional':'Depart.'}</span></td>
+    <td><button class="btn btn-danger btn-sm btn-icon" onclick="delFeriado(${f.id})" title="Eliminar">🗑️</button></td></tr>`).join('')
+    :`<tr><td colspan="4" style="text-align:center;color:#aaa;padding:16px;">Sin feriados para ${anio}</td></tr>`;
+  renderCal();
+}
+
+function addFeriado(){
+  const fecha=document.getElementById('newFerFecha').value;
+  const nombre=document.getElementById('newFerNombre').value.trim();
+  const tipo=document.getElementById('newFerTipo').value;
+  if(!fecha||!nombre){toast('Ingrese fecha y nombre','error');return;}
+  const data=DB.get('feriados');
+  if(data.find(f=>f.fecha===fecha)){toast('Ya existe un feriado para esa fecha','error');return;}
+  data.push({id:DB.nextId('feriados'),fecha,nombre,tipo});
+  DB.set('feriados',data);
+  document.getElementById('newFerFecha').value='';
+  document.getElementById('newFerNombre').value='';
+  buildFerAnios();
+  renderFeriados();
+  toast('Feriado agregado','success');
+}
+
+function delFeriado(id){
+  if(!confirm('¿Eliminar este feriado?')) return;
+  DB.set('feriados',DB.get('feriados').filter(f=>f.id!==id));
+  buildFerAnios();renderFeriados();toast('Feriado eliminado','success');
+}
+
+/* ---- CALENDARIO ---- */
+function prevMonth(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCal();}
+function nextMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal();}
+
+function renderCal(){
+  const feriados=DB.get('feriados').map(f=>f.fecha);
+  const ferNombres={};
+  DB.get('feriados').forEach(f=>{ferNombres[f.fecha]=f.nombre;});
+  const horasExtra=DB.get('horas_extra');
+
+  // Agregar encabezados días
+  const dows=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  document.getElementById('calDow').innerHTML=dows.map((d,i)=>`<div class="cal-dow${i>=5?' weekend':''}">${d}</div>`).join('');
+
+  document.getElementById('calTitle').textContent=`${MESES_ES[calMonth]} ${calYear}`;
+  // Período del mes
+  const prevM=calMonth===0?11:calMonth-1, prevY=calMonth===0?calYear-1:calYear;
+  const nextM=calMonth===11?0:calMonth+1, nextY=calMonth===11?calYear+1:calYear;
+  document.getElementById('calSub').textContent=`Período: 21/${String(prevM+1).padStart(2,'0')}/${prevY} — 20/${String(calMonth+1).padStart(2,'0')}/${calYear}`;
+
+  const firstDay=new Date(calYear,calMonth,1);
+  // JS: 0=Dom, convertir a Lun=0
+  let startDow=firstDay.getDay()-1; if(startDow<0) startDow=6;
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const daysInPrev=new Date(calYear,calMonth,0).getDate();
+  const todayStr=new Date().toISOString().split('T')[0];
+
+  const cells=[];
+  // Días del mes anterior
+  for(let i=startDow-1;i>=0;i--) cells.push({day:daysInPrev-i,month:'prev',date:null});
+  // Días del mes actual
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    cells.push({day:d,month:'cur',date:dateStr});
+  }
+  // Completar hasta 42 celdas
+  let nextDay=1;
+  while(cells.length<42) cells.push({day:nextDay++,month:'next',date:null});
+
+  document.getElementById('calBody').innerHTML=cells.map(c=>{
+    if(c.month!=='cur') return `<div class="cal-day other-month"><div class="cal-day-num">${c.day}</div></div>`;
+    const dow=new Date(c.date+'T12:00:00').getDay(); // 0=Dom,6=Sáb
+    const isFer=feriados.includes(c.date);
+    const isWE=dow===0||dow===6;
+    const isSD=isWE||isFer;
+    const isToday=c.date===todayStr;
+
+    // Entradas de horas extra del día
+    const entries=horasExtra.filter(h=>h.fecha===c.date);
+    const entryHtml=entries.slice(0,3).map(h=>`<div class="cal-entry${isSD?' sdf':''}" title="${escHtml(h.nombre)}: ${h.totalFinal}h">${escHtml((h.nombre||'').split(' ')[0])} ${h.totalFinal}h</div>`).join('');
+    const moreHtml=entries.length>3?`<div style="font-size:9px;color:#888;">+${entries.length-3} más</div>`:'';
+    const ferHtml=isFer?`<div class="cal-entry feriado-badge" title="${escHtml(ferNombres[c.date]||'')}">🎌 ${escHtml((ferNombres[c.date]||'').slice(0,20))}</div>`:'';
+
+    let cls='cal-day';
+    if(isToday) cls+=' today';
+    if(isFer) cls+=' feriado';
+    else if(isWE) cls+=' weekend-day';
+
+    return `<div class="${cls}" onclick="openDay('${c.date}')">
+      <div class="cal-day-num">${isToday?`<div style="background:#8B1A1A;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;">${c.day}</div>`:`<span>${c.day}</span>`}</div>
+      ${ferHtml}${entryHtml}${moreHtml}
+    </div>`;
+  }).join('');
+}
+
+function openDay(fecha){
+  const entries=DB.get('horas_extra').filter(h=>h.fecha===fecha);
+  if(entries.length===0){
+    if(confirm(`Sin registros para ${formatDate(fecha)}.\n¿Registrar nueva hora extra para esta fecha?`)){
+      window.location.href=`form-horas-extra.html`;
+    }
+    return;
+  }
+  const lines=entries.map(h=>`• ${h.nombre} — ${h.totalFinal}h (${h.tipo==='C'?'Comp.':'Extra'})`).join('\n');
+  alert(`Horas Extra del ${formatDate(fecha)}:\n\n${lines}`);
+}
+
+// Sincronizar filtro de año del calendario con el mes visible
+function syncFerAnio(){
+  const anioSel=document.getElementById('ferAnio');
+  if(anioSel.value!==String(calYear)){
+    anioSel.value=String(calYear);
+    if(!anioSel.value) anioSel.options[0]&&(anioSel.value=anioSel.options[0].value);
+    renderFeriados();
+  }
+}
+function prevMonth2(){prevMonth();syncFerAnio();}
+function nextMonth2(){nextMonth();syncFerAnio();}
+// Override nav buttons
+document.querySelector('[onclick="prevMonth()"]').onclick=prevMonth2;
+document.querySelector('[onclick="nextMonth()"]').onclick=nextMonth2;
+
+buildFerAnios();
+renderFeriados();
+</script>
+</body>
+</html>

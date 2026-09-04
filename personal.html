@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Personal Operativo — EMAVÍAS</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.banner{background:linear-gradient(135deg,#8B1A1A,#6B1414);color:#fff;padding:20px 28px;border-radius:10px;margin-bottom:20px;display:flex;align-items:center;gap:20px}
+.banner-icon{font-size:2.5rem}
+.banner-text h2{margin:0;font-size:1.4rem;font-weight:700}
+.banner-text p{margin:4px 0 0;opacity:.85;font-size:.9rem}
+.banner-stats{margin-left:auto;display:flex;gap:24px}
+.stat-box{text-align:center}
+.stat-num{font-size:1.6rem;font-weight:700;line-height:1}
+.stat-lbl{font-size:.72rem;opacity:.8;text-transform:uppercase;letter-spacing:.5px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:600}
+.badge-perm{background:#d4edda;color:#155724}
+.badge-even{background:#fff3cd;color:#856404}
+.btn-icon{background:none;border:none;cursor:pointer;font-size:1rem;padding:3px 6px;border-radius:4px;transition:background .15s}
+.btn-icon:hover{background:rgba(139,26,26,.12)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal{background:#fff;border-radius:12px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-header{background:linear-gradient(135deg,#8B1A1A,#6B1414);color:#fff;padding:16px 20px;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between}
+.modal-header h3{margin:0;font-size:1.1rem}
+.modal-close{background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;line-height:1}
+.modal-body{padding:20px}
+.modal-footer{padding:12px 20px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:10px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-row.full{grid-template-columns:1fr}
+.form-group label{display:block;font-size:.82rem;font-weight:600;color:#555;margin-bottom:4px}
+.form-group input,.form-group select{width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-size:.9rem;box-sizing:border-box}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:#8B1A1A}
+.search-box{position:relative;flex:1;max-width:300px}
+.search-box input{width:100%;padding:8px 10px 8px 32px;border:1.5px solid #ddd;border-radius:6px;font-size:.9rem;box-sizing:border-box}
+.search-box::before{content:'🔍';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:.85rem}
+</style>
+</head>
+<body>
+<div id="sidebarContainer"></div>
+<div class="main-content">
+  <div id="topbarContainer"></div>
+
+  <div class="banner">
+    <div class="banner-icon">👷</div>
+    <div class="banner-text">
+      <h2>Personal Operativo EMAVÍAS</h2>
+      <p>Gestión del personal: permanente y eventual</p>
+    </div>
+    <div class="banner-stats">
+      <div class="stat-box"><div class="stat-num" id="statTotal">0</div><div class="stat-lbl">Total</div></div>
+      <div class="stat-box"><div class="stat-num" id="statPerm">0</div><div class="stat-lbl">Permanentes</div></div>
+      <div class="stat-box"><div class="stat-num" id="statEven">0</div><div class="stat-lbl">Eventuales</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span style="font-weight:700;font-size:1rem">Lista de Personal</span>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Buscar por CI, nombre, grupo..." oninput="renderTable()">
+      </div>
+      <select id="filtGrupo" onchange="renderTable()" style="padding:7px 10px;border:1.5px solid #ddd;border-radius:6px;font-size:.88rem">
+        <option value="">Todos los grupos</option>
+      </select>
+      <select id="filtPerm" onchange="renderTable()" style="padding:7px 10px;border:1.5px solid #ddd;border-radius:6px;font-size:.88rem">
+        <option value="">Permanente/Eventual</option>
+        <option value="PERMANENTE">Permanente</option>
+        <option value="EVENTUAL">Eventual</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="triggerImportPersonal()">📥 Importar Excel</button>
+      <input type="file" id="fileImportPersonal" accept=".xlsx,.xls" style="display:none" onchange="handleImportPersonal(this)">
+      <button class="btn btn-primary btn-sm" onclick="openModal()" style="margin-left:auto">➕ Nuevo Personal</button>
+    </div>
+    <div class="card-body" style="padding:0">
+      <div class="table-wrapper">
+        <table>
+          <thead><tr>
+            <th style="width:40px">#</th>
+            <th>C.I.</th>
+            <th>Apellidos y Nombre</th>
+            <th>Grupo de Trabajo</th>
+            <th>Cargo</th>
+            <th>Tipo</th>
+            <th style="width:90px">Acciones</th>
+          </tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">➕ Nuevo Personal</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>C.I. *</label>
+          <input type="text" id="fCi" placeholder="Ej: 1234567 LP" required>
+        </div>
+        <div class="form-group">
+          <label>Tipo</label>
+          <select id="fPerm">
+            <option value="PERMANENTE">Permanente</option>
+            <option value="EVENTUAL">Eventual</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Apellidos y Nombre *</label>
+          <input type="text" id="fNombre" placeholder="Ej: Mamani Quispe Juan Carlos" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Grupo de Trabajo</label>
+          <input type="text" id="fGrupo" list="gruposList" placeholder="Ej: ASFALTO 1">
+          <datalist id="gruposList"></datalist>
+        </div>
+        <div class="form-group">
+          <label>Cargo</label>
+          <input type="text" id="fCargo" placeholder="Ej: Chofer Volqueta">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="saveWorker()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="js/app.js"></script>
+<script>
+AUTH.require();
+renderSidebar('personal');
+renderTopbar('Personal Operativo','Gestión de trabajadores EMAVÍAS');
+
+const PAGE_SIZE = 25;
+let currentPage = 1;
+
+function getData(){
+  return DB.get('trabajadores');
+}
+
+function getGrupos(){
+  const g = [...new Set(getData().map(w=>w.grupo).filter(Boolean))].sort();
+  return g;
+}
+
+function populateFilters(){
+  const grupos = getGrupos();
+  const sel = document.getElementById('filtGrupo');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todos los grupos</option>' +
+    grupos.map(g=>`<option value="${escHtml(g)}"${g===cur?' selected':''}>${escHtml(g)}</option>`).join('');
+  // datalist for modal
+  document.getElementById('gruposList').innerHTML =
+    grupos.map(g=>`<option value="${escHtml(g)}">`).join('');
+}
+
+function filtered(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const gr = document.getElementById('filtGrupo').value;
+  const pm = document.getElementById('filtPerm').value;
+  return getData().filter(w=>{
+    if(q && !`${w.ci} ${w.nombre} ${w.grupo} ${w.cargo}`.toLowerCase().includes(q)) return false;
+    if(gr && w.grupo !== gr) return false;
+    if(pm && w.permanencia !== pm) return false;
+    return true;
+  });
+}
+
+function renderStats(){
+  const all = getData();
+  document.getElementById('statTotal').textContent = all.length;
+  document.getElementById('statPerm').textContent = all.filter(w=>w.permanencia==='PERMANENTE').length;
+  document.getElementById('statEven').textContent = all.filter(w=>w.permanencia!=='PERMANENTE').length;
+}
+
+function renderTable(){
+  const rows = filtered();
+  const total = rows.length;
+  const pages = Math.max(1, Math.ceil(total/PAGE_SIZE));
+  if(currentPage > pages) currentPage = 1;
+  const slice = rows.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+  const tbody = document.getElementById('tableBody');
+  if(!slice.length){
+    tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:32px;color:#999">No se encontraron registros</td></tr>`;
+  } else {
+    tbody.innerHTML = slice.map((w,i)=>`
+      <tr>
+        <td style="color:#aaa;font-size:.8rem">${(currentPage-1)*PAGE_SIZE+i+1}</td>
+        <td style="font-family:monospace;font-size:.88rem">${escHtml(w.ci)}</td>
+        <td style="font-weight:600">${escHtml(w.nombre)}</td>
+        <td><span style="background:#f0f4ff;color:#2c5fa8;padding:2px 8px;border-radius:8px;font-size:.8rem">${escHtml(w.grupo||'—')}</span></td>
+        <td style="color:#555;font-size:.88rem">${escHtml(w.cargo||'—')}</td>
+        <td><span class="badge ${w.permanencia==='PERMANENTE'?'badge-perm':'badge-even'}">${w.permanencia==='PERMANENTE'?'Permanente':'Eventual'}</span></td>
+        <td>
+          <button class="btn-icon" title="Editar" onclick="openModal(${w.id})">✏️</button>
+          <button class="btn-icon" title="Eliminar" onclick="deleteWorker(${w.id})" style="color:#c00">🗑️</button>
+        </td>
+      </tr>`).join('');
+  }
+  // Pagination
+  const pag = document.getElementById('pagination');
+  if(pages<=1){pag.innerHTML='';return;}
+  let btns = `<button class="page-btn" ${currentPage===1?'disabled':''} onclick="goPage(${currentPage-1})">‹</button>`;
+  for(let p=1;p<=pages;p++){
+    if(p===1||p===pages||Math.abs(p-currentPage)<=2)
+      btns+=`<button class="page-btn${p===currentPage?' active':''}" onclick="goPage(${p})">${p}</button>`;
+    else if(Math.abs(p-currentPage)===3) btns+='<span style="padding:4px 2px">…</span>';
+  }
+  btns+=`<button class="page-btn" ${currentPage===pages?'disabled':''} onclick="goPage(${currentPage+1})">›</button>`;
+  btns+=`<span style="margin-left:8px;font-size:.82rem;color:#888">${total} registros</span>`;
+  pag.innerHTML=btns;
+}
+
+function goPage(p){currentPage=p;renderTable();}
+
+function openModal(id){
+  document.getElementById('editId').value = id||'';
+  document.getElementById('modalTitle').textContent = id ? '✏️ Editar Personal' : '➕ Nuevo Personal';
+  if(id){
+    const w = getData().find(x=>x.id===id);
+    if(!w) return;
+    document.getElementById('fCi').value = w.ci||'';
+    document.getElementById('fNombre').value = w.nombre||'';
+    document.getElementById('fGrupo').value = w.grupo||'';
+    document.getElementById('fCargo').value = w.cargo||'';
+    document.getElementById('fPerm').value = w.permanencia||'PERMANENTE';
+  } else {
+    document.getElementById('fCi').value='';
+    document.getElementById('fNombre').value='';
+    document.getElementById('fGrupo').value='';
+    document.getElementById('fCargo').value='';
+    document.getElementById('fPerm').value='PERMANENTE';
+  }
+  document.getElementById('modalOverlay').classList.add('active');
+  setTimeout(()=>document.getElementById('fCi').focus(),100);
+}
+
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+function saveWorker(){
+  const ci = document.getElementById('fCi').value.trim();
+  const nombre = document.getElementById('fNombre').value.trim();
+  const grupo = document.getElementById('fGrupo').value.trim();
+  const cargo = document.getElementById('fCargo').value.trim();
+  const permanencia = document.getElementById('fPerm').value;
+  const editId = document.getElementById('editId').value;
+
+  if(!ci){toast('Ingrese el C.I. del trabajador','error');document.getElementById('fCi').focus();return;}
+  if(!nombre){toast('Ingrese el nombre completo','error');document.getElementById('fNombre').focus();return;}
+
+  const workers = getData();
+
+  if(editId){
+    const id = parseInt(editId);
+    // Check duplicate CI (excluding self)
+    if(workers.some(w=>w.id!==id && w.ci===ci)){toast('Ya existe un trabajador con ese C.I.','error');return;}
+    const idx = workers.findIndex(w=>w.id===id);
+    if(idx>=0) workers[idx] = {...workers[idx], ci, nombre, grupo, cargo, permanencia};
+    DB.set('trabajadores', workers);
+    toast('Trabajador actualizado correctamente','success');
+  } else {
+    if(workers.some(w=>w.ci===ci)){toast('Ya existe un trabajador con ese C.I.','error');return;}
+    const maxId = workers.length ? Math.max(...workers.map(w=>w.id||0)) : 0;
+    workers.push({id: maxId+1, ci, nombre, grupo, cargo, permanencia});
+    DB.set('trabajadores', workers);
+    toast('Trabajador agregado correctamente','success');
+  }
+
+  closeModal();
+  populateFilters();
+  renderStats();
+  renderTable();
+}
+
+function deleteWorker(id){
+  const w = getData().find(x=>x.id===id);
+  if(!w) return;
+  if(!confirm(`¿Eliminar a ${w.nombre}?\n\nEsta acción no se puede deshacer.`)) return;
+  const workers = getData().filter(x=>x.id!==id);
+  DB.set('trabajadores', workers);
+  toast('Trabajador eliminado','success');
+  populateFilters();
+  renderStats();
+  renderTable();
+}
+
+
+function triggerImportPersonal(){
+  document.getElementById('fileImportPersonal').value='';
+  document.getElementById('fileImportPersonal').click();
+}
+
+function handleImportPersonal(inp){
+  const file=inp.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=new Uint8Array(e.target.result);
+      const wb=XLSX.read(data,{type:'uint8array',cellDates:true});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+      if(!rows.length){toast('Archivo vacío','error');return;}
+
+      // Find header row (first row containing 'C.I' or 'CI' or 'APELLIDO')
+      let headerIdx=-1;
+      let iCi=-1,iNombre=-1,iGrupo=-1,iCargo=-1,iPerm=-1;
+      for(let r=0;r<Math.min(5,rows.length);r++){
+        const row=rows[r];
+        if(!row) continue;
+        const cells=row.map(c=>String(c||'').toUpperCase().trim());
+        const hasCi=cells.findIndex(c=>c==='C.I'||c==='CI'||c.startsWith('C.I.'));
+        const hasNom=cells.findIndex(c=>c.includes('NOMBRE')||c.includes('APELLIDO'));
+        if(hasCi>=0||hasNom>=0){
+          headerIdx=r;
+          iCi=hasCi>=0?hasCi:cells.findIndex(c=>c.includes('C.I'));
+          iNombre=hasNom;
+          iGrupo=cells.findIndex(c=>c.includes('GRUPO'));
+          iCargo=cells.findIndex(c=>c.includes('CARGO'));
+          iPerm=cells.findIndex(c=>c.includes('TIPO')||c.includes('PERMANENCIA')||c.includes('PERM'));
+          break;
+        }
+      }
+      if(headerIdx<0){toast('No se encontró fila de encabezado. Verifique que el archivo tenga columnas C.I y Nombre/Apellido.','error');return;}
+
+      const imported=[];
+      for(let i=headerIdx+1;i<rows.length;i++){
+        const r=rows[i];
+        if(!r) continue;
+        const ciVal=iCi>=0?r[iCi]:null;
+        if(!ciVal&&ciVal!==0) continue;
+        const ci=String(ciVal).trim();
+        if(!ci) continue;
+        const nombre=String(iNombre>=0&&r[iNombre]!=null?r[iNombre]:'').trim();
+        if(!nombre) continue;
+        let perm=String(iPerm>=0&&r[iPerm]!=null?r[iPerm]:'PERMANENTE').trim().toUpperCase();
+        if(!perm||perm==='NULL') perm='PERMANENTE';
+        if(perm.includes('EVEN')) perm='EVENTUAL';
+        else perm='PERMANENTE';
+        imported.push({
+          ci,
+          nombre,
+          grupo:String(iGrupo>=0&&r[iGrupo]!=null?r[iGrupo]:'').trim(),
+          cargo:String(iCargo>=0&&r[iCargo]!=null?r[iCargo]:'').trim(),
+          permanencia:perm
+        });
+      }
+      if(!imported.length){toast('No se encontraron registros válidos.','error');return;}
+
+      if(confirm('Se encontraron '+imported.length+' trabajadores.\n\n¿REEMPLAZAR el listado de personal existente?\n→ Aceptar = Reemplazar\n→ Cancelar = Agregar a los existentes')){
+        imported.forEach((w,i)=>w.id=i+1);
+        DB.set('trabajadores',imported);
+        toast(imported.length+' trabajadores importados (datos reemplazados)','success');
+      } else {
+        const existing=DB.get('trabajadores');
+        const maxId=existing.length?Math.max(...existing.map(w=>Number(w.id)||0)):0;
+        const ciSet=new Set(existing.map(w=>w.ci));
+        let added=0;
+        imported.forEach((w,i)=>{
+          if(!ciSet.has(w.ci)){w.id=maxId+added+1;existing.push(w);added++;}
+        });
+        DB.set('trabajadores',existing);
+        toast(added+' trabajadores nuevos agregados ('+imported.length+' leídos)','success');
+      }
+      populateFilters();renderStats();renderTable();
+    }catch(err){
+      console.error('Import error:',err);
+      toast('Error al leer el archivo: '+err.message,'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Close modal on overlay click
+document.getElementById('modalOverlay').addEventListener('click', function(e){
+  if(e.target===this) closeModal();
+});
+
+// Init
+populateFilters();
+renderStats();
+renderTable();
+</script>
+</body>
+</html>
