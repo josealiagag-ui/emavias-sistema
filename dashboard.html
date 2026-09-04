@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMAVIAS - Dashboard</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.year-selector-bar{display:flex;align-items:center;gap:12px;margin-bottom:16px;background:#fff;border-radius:10px;padding:12px 18px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e8e8e8;flex-wrap:wrap;}
+.year-selector-bar label{font-size:13px;font-weight:600;color:#555;white-space:nowrap;}
+.year-selector-bar select{border:1px solid #ddd;border-radius:6px;padding:6px 12px;font-size:13px;color:#333;background:#fff;cursor:pointer;min-width:120px;}
+.year-selector-bar select:focus{outline:none;border-color:#8B1A1A;}
+.year-pills{display:flex;gap:6px;flex-wrap:wrap;}
+.year-pill{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:2px solid #ddd;background:#fff;color:#666;transition:all .18s;}
+.year-pill:hover{border-color:#8B1A1A;color:#8B1A1A;}
+.year-pill.active{background:#8B1A1A;border-color:#8B1A1A;color:#fff;}
+.year-pill-all{border-color:#666;}
+.year-pill-all.active{background:#444;border-color:#444;}
+</style>
+</head>
+<body>
+<div id="sidebarContainer"></div>
+<div class="main-content">
+  <div id="topbarContainer"></div>
+  <div class="page-content">
+
+    <!-- Selector de año -->
+    <div class="year-selector-bar">
+      <label>📅 Filtrar por año:</label>
+      <div class="year-pills" id="yearPills"></div>
+      <button class="btn btn-outline btn-sm" onclick="refreshData()" title="Actualizar datos desde localStorage" style="margin-left:auto;">🔄 Actualizar</button>
+    </div>
+
+    <div id="statsGrid" class="stats-grid"></div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;" class="dash-row">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🏗️ Obras por Unidad Ejecutora</span>
+          <span id="ueAnioLabel" style="font-size:11px;color:#999;font-weight:400;"></span>
+        </div>
+        <div class="card-body">
+          <div id="ueTopBanner" style="margin-bottom:10px;"></div>
+          <div id="obrasChart" style="display:flex;align-items:center;gap:16px;"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">📊 Estado de Obras</span></div>
+        <div class="card-body" id="estadosPanel"></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="dash-row">
+      <div class="card">
+        <div class="card-header"><span class="card-title">📄 Últimas Cotizaciones</span> <a href="cotizaciones-externos.html" class="btn btn-outline btn-sm">Ver todas</a></div>
+        <div class="card-body" style="padding:0;">
+          <div class="table-wrapper"><table id="tableCotiz"></table></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">⏱️ Horas Extra - Periodo Actual</span></div>
+        <div class="card-body" id="horasPanel"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/app.js"></script>
+<script>
+const user = AUTH.require(); if(!user) throw 0;
+document.getElementById('sidebarContainer').innerHTML = renderSidebar('dashboard');
+document.getElementById('topbarContainer').innerHTML = renderTopbar('Dashboard', 'EMAVIAS - Sistema de Gestion Administrativa');
+
+// ── Datos base (let para poder refrescar) ───────────────────────────
+let allObras    = DB.get('obras');
+let allDesp     = DB.get('despachos');
+let allCotExt   = DB.get('cotizaciones_ext');
+let allCotGamlp = DB.get('cotizaciones_gamlp');
+let allHoras    = DB.get('horas_extra');
+let allProd     = DB.get('produccion');
+
+// ── Años disponibles ────────────────────────────────────────────────
+let selectedYear = 'Todos';
+
+function buildYearPills() {
+  const yearsSet = new Set();
+  allObras.forEach(o => { const y=(o.fecha||'').slice(0,4); if(y) yearsSet.add(y); });
+  allDesp.forEach(d => { const y=(d.fecha||'').slice(0,4); if(y) yearsSet.add(y); });
+  allCotExt.forEach(c => { const y=(c.fecha||'').slice(0,4); if(y) yearsSet.add(y); });
+  allCotGamlp.forEach(c => { const y=(c.fecha||'').slice(0,4); if(y) yearsSet.add(y); });
+  allHoras.forEach(h => { const y=(h.periodo||h.fecha||'').slice(0,4); if(y) yearsSet.add(y); });
+  allDesp.forEach(d => { const y=(d.fecha||'').slice(0,4); if(y) yearsSet.add(y); });
+  const years = [...yearsSet].sort().reverse();
+  // Mantener año seleccionado si sigue existiendo; si no, el más reciente
+  if(!years.includes(selectedYear)) selectedYear = years.length ? years[0] : 'Todos';
+
+  const container = document.getElementById('yearPills');
+  container.innerHTML = '';
+  // Pill "Todos"
+  const allPill = document.createElement('button');
+  allPill.className = 'year-pill year-pill-all' + (selectedYear==='Todos'?' active':'');
+  allPill.textContent = 'Todos los años';
+  allPill.onclick = () => setYear('Todos');
+  container.appendChild(allPill);
+  // Year pills
+  years.forEach(y => {
+    const btn = document.createElement('button');
+    btn.className = 'year-pill' + (y===selectedYear?' active':'');
+    btn.id = 'pill-'+y;
+    btn.textContent = y;
+    btn.onclick = () => setYear(y);
+    container.appendChild(btn);
+  });
+}
+
+// ── Refrescar desde localStorage ─────────────────────────────────────
+function refreshData() {
+  allObras    = DB.get('obras');
+  allDesp     = DB.get('despachos');
+  allCotExt   = DB.get('cotizaciones_ext');
+  allCotGamlp = DB.get('cotizaciones_gamlp');
+  allHoras    = DB.get('horas_extra');
+  allProd     = DB.get('produccion');
+  buildYearPills();
+  renderDashboard();
+  toast('Dashboard actualizado', 'success');
+}
+
+// Auto-refrescar cuando otra pestaña importa datos
+window.addEventListener('storage', function(e) {
+  const keys = ['ema_obras','ema_despachos','ema_cotizaciones_ext','ema_cotizaciones_gamlp','ema_horas_extra','ema_produccion'];
+  if(keys.includes(e.key)) refreshData();
+});
+
+buildYearPills();
+
+function setYear(y) {
+  selectedYear = y;
+  // Update pill active states
+  document.querySelectorAll('.year-pill').forEach(p => p.classList.remove('active'));
+  if(y==='Todos') {
+    document.querySelector('.year-pill-all').classList.add('active');
+  } else {
+    const pill = document.getElementById('pill-'+y);
+    if(pill) pill.classList.add('active');
+  }
+  renderDashboard();
+}
+
+// ── Filtro por año ──────────────────────────────────────────────────
+function filterByYear(arr, dateKey) {
+  if(selectedYear==='Todos') return arr;
+  return arr.filter(x => (x[dateKey]||'').slice(0,4) === selectedYear);
+}
+
+// ── Render completo ─────────────────────────────────────────────────
+function renderDashboard() {
+  const obras    = filterByYear(allObras, 'fecha');
+  const desp     = filterByYear(allDesp, 'fecha');
+  const cotExt   = filterByYear(allCotExt, 'fecha');
+  const cotGamlp = filterByYear(allCotGamlp, 'fecha');
+  const horas    = selectedYear==='Todos' ? allHoras : allHoras.filter(h=>(h.periodo||'').startsWith(selectedYear));
+  const prod     = selectedYear==='Todos' ? allProd : allProd.filter(p=>(p.fecha||'').slice(0,4)===selectedYear);
+
+  const totalAreaM2  = obras.reduce((s,o)=>s+(Number(o.area)||0),0);
+  const totalTon     = prod.reduce((s,p)=>s+(Number(p.cantidadTon)||0),0);
+  const totalCotExtM = cotExt.reduce((s,c)=>s+(Number(c.total)||0),0);
+  const totalHorasV  = horas.reduce((s,h)=>s+(Number(h.totalFinal)||0),0);
+  const yrLabel      = selectedYear==='Todos' ? 'Acumulado total' : selectedYear;
+
+  // ── Stats ──
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-icon red">🏗️</div><div><div class="stat-value">${obras.length}</div><div class="stat-label">Registros de Obras</div><div class="stat-change up">↑ ${obras.filter(o=>o.estado==='En Ejecucion').length} en ejecución · ${yrLabel}</div></div></div>
+    <div class="stat-card"><div class="stat-icon blue">📐</div><div><div class="stat-value">${formatNumber(totalAreaM2,0)}</div><div class="stat-label">m² de Área Intervenida</div><div class="stat-change up">↑ ${yrLabel}</div></div></div>
+    <div class="stat-card"><div class="stat-icon green">🏭</div><div><div class="stat-value">${formatNumber(totalTon,1)}</div><div class="stat-label">Toneladas Producidas</div><div class="stat-change up">↑ ${prod.filter(p=>p.estado==='Abierto').length} turnos abiertos</div></div></div>
+    <div class="stat-card"><div class="stat-icon orange">📄</div><div><div class="stat-value">${cotExt.length + cotGamlp.length}</div><div class="stat-label">Cotizaciones Emitidas</div><div class="stat-change up">↑ ${cotExt.filter(c=>c.estado==='Aprobada').length + cotGamlp.filter(c=>c.estado==='Aprobada').length} aprobadas</div></div></div>
+    <div class="stat-card"><div class="stat-icon purple">💰</div><div><div class="stat-value">${formatCurrency(totalCotExtM)}</div><div class="stat-label">Monto Cotiz. Externos</div></div></div>
+    <div class="stat-card"><div class="stat-icon teal">⏱️</div><div><div class="stat-value">${formatNumber(totalHorasV,1)}</div><div class="stat-label">Horas Extra Acumuladas</div><div class="stat-change">${horas.length} registros</div></div></div>
+  `;
+
+  // ── Donut: Obras por Unidad Ejecutora ──
+  const ueMap = {};
+  obras.forEach(o=>{ if(o.unidad) ueMap[o.unidad]=(ueMap[o.unidad]||0)+1; });
+  const ueEntries = Object.entries(ueMap).sort((a,b)=>b[1]-a[1]);
+  const colors = ['#8B1A1A','#2980b9','#27ae60','#f39c12','#8e44ad','#1abc9c','#e74c3c','#d35400'];
+  document.getElementById('ueAnioLabel').textContent = `${yrLabel} · ${obras.length} registros`;
+
+  if(ueEntries.length) {
+    const [topUE, topCount] = ueEntries[0];
+    const pct = obras.length ? Math.round(topCount/obras.length*100) : 0;
+    document.getElementById('ueTopBanner').innerHTML = `
+      <div style="background:linear-gradient(135deg,#8B1A1A,#6b1212);color:#fff;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:12px;">
+        <div style="font-size:28px;">🏆</div>
+        <div>
+          <div style="font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.5px;">Unidad con más registros</div>
+          <div style="font-size:16px;font-weight:800;letter-spacing:.3px;">${escHtml(topUE)}</div>
+          <div style="font-size:11px;opacity:.85;">${topCount} registros · ${pct}% del total</div>
+        </div>
+      </div>`;
+  } else {
+    document.getElementById('ueTopBanner').innerHTML='';
+  }
+
+  (function drawDonut(){
+    const total = ueEntries.reduce((s,[,v])=>s+v,0);
+    if(!total){ document.getElementById('obrasChart').innerHTML='<div style="color:#999;font-size:13px;padding:16px;">Sin datos para el período seleccionado</div>'; return; }
+    const SIZE=160, cx=SIZE/2, cy=SIZE/2, R=SIZE/2-6, Ri=R*0.48;
+    let angle=-Math.PI/2;
+    let paths='', legendHtml='';
+    ueEntries.forEach(([ue,v],i)=>{
+      const pct=v/total;
+      const end=angle+pct*2*Math.PI;
+      const x1=cx+R*Math.cos(angle),  y1=cy+R*Math.sin(angle);
+      const x2=cx+R*Math.cos(end),    y2=cy+R*Math.sin(end);
+      const xi1=cx+Ri*Math.cos(angle),yi1=cy+Ri*Math.sin(angle);
+      const xi2=cx+Ri*Math.cos(end),  yi2=cy+Ri*Math.sin(end);
+      const lg=pct>0.5?1:0;
+      const col=colors[i%colors.length];
+      paths+=`<path d="M${xi1} ${yi1} L${x1} ${y1} A${R} ${R} 0 ${lg} 1 ${x2} ${y2} L${xi2} ${yi2} A${Ri} ${Ri} 0 ${lg} 0 ${xi1} ${yi1}Z"
+        fill="${col}" stroke="#fff" stroke-width="2"><title>${ue}: ${v} registros (${Math.round(pct*100)}%)</title></path>`;
+      legendHtml+=`<div style="display:flex;align-items:center;gap:7px;padding:3px 0;border-bottom:1px solid #f5f5f5;">
+        <div style="width:11px;height:11px;border-radius:3px;background:${col};flex-shrink:0;"></div>
+        <span style="font-size:11px;color:#444;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(ue)}</span>
+        <span style="font-size:11px;font-weight:700;color:#333;">${v}</span>
+        <span style="font-size:10px;color:#999;width:32px;text-align:right;">${Math.round(pct*100)}%</span>
+      </div>`;
+      angle=end;
+    });
+    document.getElementById('obrasChart').innerHTML=`
+      <svg width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}" style="flex-shrink:0;">${paths}</svg>
+      <div style="flex:1;overflow:hidden;">${legendHtml}</div>`;
+  })();
+
+  // ── Estados de obras ──
+  const estados = {};
+  obras.forEach(o=>{ if(o.estado) estados[o.estado]=(estados[o.estado]||0)+1; });
+  const stColors={'Completado':'#27ae60','En Ejecucion':'#2980b9','Planificado':'#f39c12'};
+  const totalEstados = obras.length || 1;
+  document.getElementById('estadosPanel').innerHTML = Object.keys(estados).length
+    ? Object.entries(estados).map(([e,v])=>{
+        const pct=Math.round(v/totalEstados*100);
+        return `<div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span>${e}</span><span style="font-weight:700;">${v} (${pct}%)</span></div>
+          <div class="progress"><div class="progress-bar" style="width:${pct}%;background:${stColors[e]||'#8B1A1A'};"></div></div>
+        </div>`;
+      }).join('')
+    : '<div style="color:#999;font-size:13px;padding:12px 0;">Sin datos para el período seleccionado</div>';
+
+  // ── Cotizaciones recientes ──
+  const allCot = [...cotExt.slice(-3),...cotGamlp.slice(-2)].slice(-5);
+  document.getElementById('tableCotiz').innerHTML = allCot.length
+    ? `<thead><tr><th>N°</th><th>Cliente/Subakc.</th><th>Total</th><th>Estado</th></tr></thead><tbody>
+        ${allCot.map(c=>`<tr>
+          <td style="font-size:11px;">${escHtml(c.nro||'-')}</td>
+          <td>${escHtml(c.cliente||c.solicitante||'-')}</td>
+          <td><strong>${formatCurrency(c.total)}</strong></td>
+          <td>${getStatusBadge(c.estado)}</td>
+        </tr>`).join('')}
+      </tbody>`
+    : `<tbody><tr><td colspan="4" style="text-align:center;padding:24px;color:#999;">Sin cotizaciones para ${yrLabel}</td></tr></tbody>`;
+
+  // ── Horas extra ──
+  const periodos = [...new Set(horas.map(h=>h.periodo))];
+  const horasPorGrupo = {};
+  horas.forEach(h=>{ horasPorGrupo[h.grupo]=(horasPorGrupo[h.grupo]||0)+(Number(h.totalFinal)||0); });
+  document.getElementById('horasPanel').innerHTML = `
+    <div style="background:linear-gradient(135deg,#8B1A1A,#6b1212);color:#fff;border-radius:8px;padding:16px;margin-bottom:14px;">
+      <div style="font-size:32px;font-weight:800;">${formatNumber(totalHorasV,1)}</div>
+      <div style="font-size:12px;opacity:.7;margin-top:4px;">Período: ${periodos[0]||yrLabel}</div>
+    </div>
+    ${Object.keys(horasPorGrupo).length
+      ? Object.entries(horasPorGrupo).map(([g,v])=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f0f0f0;font-size:13px;"><span>🔹 ${escHtml(g)}</span><strong>${formatNumber(v,1)} hrs</strong></div>`).join('')
+      : '<div style="color:#999;font-size:13px;padding:12px 0;">Sin horas extra para el período seleccionado</div>'
+    }`;
+}
+
+renderDashboard();
+</script>
+</body>
+</html>
