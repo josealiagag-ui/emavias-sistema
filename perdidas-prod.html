@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMAVIAS - Análisis de Pérdidas</title>
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="sidebarContainer"></div>
+<div class="main-content">
+  <div id="topbarContainer"></div>
+  <div class="page-content">
+
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb"><span>EMAVIAS</span><span class="breadcrumb-sep">›</span><span>Producción</span><span class="breadcrumb-sep">›</span><span>Pérdidas</span></div>
+        <div class="page-title">⚠️ Análisis de Pérdidas en Producción</div>
+        <div class="page-subtitle">Estimado basado en parámetros configurables — Planta Achachicala</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-success btn-sm" onclick="doExport()">📗 Exportar Excel</button>
+        <a href="produccion.html" class="btn btn-secondary btn-sm">← Volver</a>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card" style="margin-bottom:18px;">
+      <div class="filters-bar">
+        <div class="filter-group">
+          <span class="filter-label">Año:</span>
+          <select id="filtAnio" class="filter-control" onchange="render()">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Mes:</span>
+          <select id="filtMes" class="filter-control" onchange="render()">
+            <option value="">Todo el año</option>
+            <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+            <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+            <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+            <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div id="kpiGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:20px;"></div>
+
+    <!-- Gráfico + Parámetros -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
+
+      <div class="card">
+        <div class="card-header"><h3>📊 Pérdidas Mensuales m³</h3></div>
+        <div class="card-body">
+          <div style="position:relative;height:300px;"><canvas id="chartPerd"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+          <h3>⚙️ Parámetros de Pérdidas</h3>
+          <button class="btn btn-primary btn-sm" onclick="guardarParams()">💾 Guardar</button>
+        </div>
+        <div class="card-body">
+          <div style="font-size:11px;color:#1a4ea0;background:#D6E4F7;padding:8px 12px;border-radius:6px;margin-bottom:14px;">
+            ℹ️ Valores extraídos de la hoja de pérdidas del Excel original. Puede ajustarlos.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div><label style="font-size:10px;color:#666;display:block;margin-bottom:3px;">Acopio/Clima %</label>
+              <input type="number" id="p_agrAcopio" step="0.001" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid #ddd;border-radius:5px;"></div>
+            <div><label style="font-size:10px;color:#666;display:block;margin-bottom:3px;">Carguío %</label>
+              <input type="number" id="p_agrCarguo" step="0.001" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid #ddd;border-radius:5px;"></div>
+            <div><label style="font-size:10px;color:#666;display:block;margin-bottom:3px;">CA Dilución %</label>
+              <input type="number" id="p_caDilucion" step="0.001" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid #ddd;border-radius:5px;"></div>
+            <div><label style="font-size:10px;color:#666;display:block;margin-bottom:3px;">CA Tambores %</label>
+              <input type="number" id="p_caTambores" step="0.001" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid #ddd;border-radius:5px;"></div>
+            <div><label style="font-size:10px;color:#666;display:block;margin-bottom:3px;">CA Trozado %</label>
+              <input type="number" id="p_caTrozado" step="0.001" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid #ddd;border-radius:5px;"></div>
+            <div><label style="font-size:10px;color:#666;display:block;margin-bottom:3px;">Encendido Agr. m³</label>
+              <input type="number" id="p_encAgr" step="0.001" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid #ddd;border-radius:5px;"></div>
+            <div><label style="font-size:10px;color:#666;display:block;margin-bottom:3px;">Encendido CA ton</label>
+              <input type="number" id="p_encCA" step="0.001" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid #ddd;border-radius:5px;"></div>
+            <div><label style="font-size:10px;color:#666;display:block;margin-bottom:3px;">Apagado Agr. m³</label>
+              <input type="number" id="p_apgAgr" step="0.001" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid #ddd;border-radius:5px;"></div>
+            <div><label style="font-size:10px;color:#666;display:block;margin-bottom:3px;">Apagado CA ton</label>
+              <input type="number" id="p_apgCA" step="0.001" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid #ddd;border-radius:5px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla mensual -->
+    <div class="card">
+      <div class="card-header"><h3>📋 Desglose de Pérdidas por Mes</h3></div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr>
+            <th>Mes</th>
+            <th style="text-align:right;">Producción m³</th>
+            <th style="text-align:center;">N° Ciclos</th>
+            <th style="text-align:right;">Pérd. Producción m³</th>
+            <th style="text-align:right;">Pérd. Agregados m³</th>
+            <th style="text-align:right;">Pérd. CA ton</th>
+            <th style="text-align:right;">Total Pérd. m³</th>
+            <th style="text-align:center;">% Pérdida</th>
+            <th style="text-align:right;">Costo Aprox.</th>
+          </tr></thead>
+          <tbody id="tablaMeses"></tbody>
+          <tfoot id="tablaTotales"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Explicación técnica -->
+    <div class="card" style="margin-top:18px;">
+      <div class="card-header"><h3>📖 Categorías de Pérdidas</h3></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;font-size:13px;">
+          <div style="padding:14px;background:#D6E4F7;border-radius:8px;border-left:4px solid #1a4ea0;">
+            <div style="font-weight:700;color:#1a4ea0;margin-bottom:6px;">⚡ Pérdidas en Producción</div>
+            <p style="color:#555;line-height:1.6;margin:0;">Ocurren en cada ciclo de <strong>encendido</strong> y <strong>apagado</strong> de la planta asfáltica (agregados + cemento asfáltico).</p>
+          </div>
+          <div style="padding:14px;background:#FFF3E0;border-radius:8px;border-left:4px solid #C47B00;">
+            <div style="font-weight:700;color:#C47B00;margin-bottom:6px;">🪨 Pérdidas de Agregados</div>
+            <p style="color:#555;line-height:1.6;margin:0;">Por erosión y clima en <strong>acopio</strong> más pérdidas por <strong>carguío</strong> y descarga del material.</p>
+          </div>
+          <div style="padding:14px;background:#FCE4E4;border-radius:8px;border-left:4px solid #8B1A1A;">
+            <div style="font-weight:700;color:#8B1A1A;margin-bottom:6px;">🛢️ Pérdidas Cemento Asfáltico</div>
+            <p style="color:#555;line-height:1.6;margin:0;">Por <strong>dilución</strong>, restos en <strong>tambores</strong> y pérdidas por <strong>trozado</strong> del cemento asfáltico.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+AUTH.require();
+document.getElementById('sidebarContainer').innerHTML = renderSidebar('produccion');
+document.getElementById('topbarContainer').innerHTML = renderTopbar('Análisis de Pérdidas','Planta Achachicala — EMAVÍAS');
+
+const ML = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MN = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+let chartInst = null;
+
+// Poblar año
+const todos = DB.get('despachos');
+const anios = [...new Set(todos.map(x=>(x.fecha||'').slice(0,4)).filter(Boolean))].sort().reverse();
+const selA = document.getElementById('filtAnio');
+anios.forEach(a=>{ const op=document.createElement('option'); op.value=a; op.textContent=a; selA.appendChild(op); });
+
+function getCfg() {
+  const c = DB.get('perdidas_config')[0] || {};
+  return {
+    agrAcopio:   Number(c.agregados_acopio_clima)||1.5,
+    agrCarguo:   Number(c.agregados_carguo)||0.5,
+    caDilucion:  Number(c.ca_dilucion)||0.3,
+    caTambores:  Number(c.ca_tambores)||0.2,
+    caTrozado:   Number(c.ca_trozado)||0.1,
+    encAgr:      Number(c.encendido_agregado_m3)||2.5,
+    encCA:       Number(c.encendido_asfalto_ton)||0.15,
+    apgAgr:      Number(c.apagado_agregado_m3)||1.5,
+    apgCA:       Number(c.apagado_asfalto_ton)||0.1,
+  };
+}
+
+function llenarInputs(cfg) {
+  document.getElementById('p_agrAcopio').value = cfg.agrAcopio;
+  document.getElementById('p_agrCarguo').value = cfg.agrCarguo;
+  document.getElementById('p_caDilucion').value = cfg.caDilucion;
+  document.getElementById('p_caTambores').value = cfg.caTambores;
+  document.getElementById('p_caTrozado').value = cfg.caTrozado;
+  document.getElementById('p_encAgr').value = cfg.encAgr;
+  document.getElementById('p_encCA').value = cfg.encCA;
+  document.getElementById('p_apgAgr').value = cfg.apgAgr;
+  document.getElementById('p_apgCA').value = cfg.apgCA;
+}
+
+function guardarParams() {
+  const cfg = {
+    agregados_acopio_clima: parseFloat(document.getElementById('p_agrAcopio').value)||0,
+    agregados_carguo:       parseFloat(document.getElementById('p_agrCarguo').value)||0,
+    ca_dilucion:            parseFloat(document.getElementById('p_caDilucion').value)||0,
+    ca_tambores:            parseFloat(document.getElementById('p_caTambores').value)||0,
+    ca_trozado:             parseFloat(document.getElementById('p_caTrozado').value)||0,
+    encendido_agregado_m3:  parseFloat(document.getElementById('p_encAgr').value)||0,
+    encendido_asfalto_ton:  parseFloat(document.getElementById('p_encCA').value)||0,
+    apagado_agregado_m3:    parseFloat(document.getElementById('p_apgAgr').value)||0,
+    apagado_asfalto_ton:    parseFloat(document.getElementById('p_apgCA').value)||0,
+  };
+  cfg.total_agregados = cfg.agregados_acopio_clima + cfg.agregados_carguo;
+  cfg.total_ca = cfg.ca_dilucion + cfg.ca_tambores + cfg.ca_trozado;
+  cfg.total_ciclo_m3 = cfg.encendido_agregado_m3 + cfg.apagado_agregado_m3;
+  cfg.total_ciclo_ton = cfg.encendido_asfalto_ton + cfg.apagado_asfalto_ton;
+  cfg.id = 1;
+  DB.set('perdidas_config', [cfg]);
+  toast('Parámetros guardados','success');
+  render();
+}
+
+function render() {
+  const cfg = getCfg();
+  llenarInputs(cfg);
+  const fa = document.getElementById('filtAnio').value;
+  const fm = document.getElementById('filtMes').value;
+  let data = DB.get('despachos');
+  if(fa) data = data.filter(x=>(x.fecha||'').startsWith(fa));
+  if(fm) data = data.filter(x=>(x.fecha||'').slice(5,7)===fm);
+
+  const totalVol = data.reduce((s,x)=>s+(Number(x.volM3)||0),0);
+  const totalDias = new Set(data.map(x=>x.fecha)).size;
+  const totalAgr = cfg.agrAcopio + cfg.agrCarguo;
+  const totalCA  = cfg.caDilucion + cfg.caTambores + cfg.caTrozado;
+  const perdProd = totalDias * (cfg.encAgr + cfg.apgAgr);
+  const perdAgg  = totalVol * totalAgr / 100;
+  const perdCA   = totalVol * totalCA / 100;
+  const perdTot  = perdProd + perdAgg;
+
+  // KPIs
+  const kpis = [
+    {icon:'🏭', v:formatNumber(totalVol,0), l:'m³ Total Producido', s:totalDias+' días de producción', c:'blue'},
+    {icon:'⚡', v:formatNumber(perdProd,1), l:'m³ Pérd. en Producción', s:'Ciclos encendido/apagado', c:'red'},
+    {icon:'🪨', v:formatNumber(perdAgg,1), l:'m³ Pérd. Agregados', s:totalAgr.toFixed(2)+'% del producido', c:'orange'},
+    {icon:'🛢️', v:formatNumber(perdCA,2), l:'ton Pérd. Cemento Asfáltico', s:totalCA.toFixed(2)+'% del CA', c:'red'},
+    {icon:'⚠️', v:formatNumber(perdTot,1), l:'m³ PÉRDIDA TOTAL', s:totalVol?formatNumber(perdTot/totalVol*100,2)+'% del total':'0%', c:'red'},
+  ];
+  const colors = {red:'#FCE4E4',orange:'#FFF3E0',blue:'#D6E4F7'};
+  const bcolors = {red:'#8B1A1A',orange:'#C47B00',blue:'#1a4ea0'};
+  document.getElementById('kpiGrid').innerHTML = kpis.map(k=>`
+    <div class="stat-card" style="border-left:4px solid ${bcolors[k.c]||'#8B1A1A'};">
+      <div class="stat-icon" style="background:${colors[k.c]||'#FCE4E4'};color:${bcolors[k.c]};font-size:20px;width:44px;height:44px;">${k.icon}</div>
+      <div><div class="stat-value" style="font-size:20px;">${k.v}</div><div class="stat-label">${k.l}</div><div class="stat-sub">${k.s}</div></div>
+    </div>`).join('');
+
+  // Tabla por mes
+  const filasMes = MN.map((mn,i)=>{
+    const dMes = data.filter(x=>(x.fecha||'').slice(5,7)===mn);
+    const vol = dMes.reduce((s,x)=>s+(Number(x.volM3)||0),0);
+    if(!vol) return null;
+    const dias = new Set(dMes.map(x=>x.fecha)).size;
+    const ciclos = Math.round(vol/75)||1;
+    const pp = dias*(cfg.encAgr+cfg.apgAgr);
+    const pa = vol*totalAgr/100;
+    const pca = vol*totalCA/100;
+    const pt = pp+pa;
+    const pct = vol?pt/vol*100:0;
+    return {mes:ML[i], vol, ciclos, pp, pa, pca, pt, pct};
+  }).filter(Boolean);
+
+  document.getElementById('tablaMeses').innerHTML = filasMes.map(f=>`<tr>
+    <td><strong>${f.mes}</strong></td>
+    <td style="text-align:right;">${formatNumber(f.vol,1)}</td>
+    <td style="text-align:center;">${f.ciclos}</td>
+    <td style="text-align:right;color:#8B1A1A;">${formatNumber(f.pp,2)}</td>
+    <td style="text-align:right;color:#C47B00;">${formatNumber(f.pa,2)}</td>
+    <td style="text-align:right;color:#8B1A1A;">${formatNumber(f.pca,3)}</td>
+    <td style="text-align:right;font-weight:700;color:#8B1A1A;">${formatNumber(f.pt,2)}</td>
+    <td style="text-align:center;">
+      <span style="background:${f.pct>5?'#FCE4E4':'#D4EDDA'};color:${f.pct>5?'#8B1A1A':'#1E6B2E'};padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">${formatNumber(f.pct,1)}%</span>
+    </td>
+    <td style="text-align:right;font-size:11px;color:#888;">≈ Bs. ${formatNumber(f.pt*850,0)}</td>
+  </tr>`).join('') || `<tr><td colspan="9" style="text-align:center;color:#999;padding:16px;">Sin datos para el período seleccionado</td></tr>`;
+
+  const totVol = filasMes.reduce((s,f)=>s+f.vol,0);
+  const totPt  = filasMes.reduce((s,f)=>s+f.pt,0);
+  const totPct = totVol?totPt/totVol*100:0;
+  document.getElementById('tablaTotales').innerHTML = totVol ? `<tr style="background:#1a1a2e;color:#fff;font-weight:700;">
+    <td>TOTAL</td>
+    <td style="text-align:right;">${formatNumber(totVol,1)}</td>
+    <td></td><td></td><td></td><td></td>
+    <td style="text-align:right;">${formatNumber(totPt,1)}</td>
+    <td style="text-align:center;">${formatNumber(totPct,2)}%</td>
+    <td style="text-align:right;">≈ Bs. ${formatNumber(totPt*850,0)}</td>
+  </tr>` : '';
+
+  // Gráfico
+  const labels = filasMes.map(f=>f.mes.slice(0,3));
+  const dProd  = filasMes.map(f=>+f.pp.toFixed(2));
+  const dAgg   = filasMes.map(f=>+f.pa.toFixed(2));
+  if(chartInst) chartInst.destroy();
+  chartInst = new Chart(document.getElementById('chartPerd'),{
+    type:'bar',
+    data:{labels, datasets:[
+      {label:'Pérd. Producción m³',data:dProd,backgroundColor:'#FCE4E4',borderColor:'#8B1A1A',borderWidth:1,borderRadius:3},
+      {label:'Pérd. Agregados m³', data:dAgg, backgroundColor:'#FFF3E0',borderColor:'#C47B00',borderWidth:1,borderRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{size:11},boxWidth:12}}},
+      scales:{y:{stacked:true,grid:{color:'#f0f0f0'},ticks:{font:{size:11}}},
+              x:{stacked:true,grid:{display:false},ticks:{font:{size:11}}}}}
+  });
+}
+
+function doExport(){
+  const COLS=[
+    {key:'mes',label:'Mes'},
+    {key:'vol',label:'Producción m³'},
+    {key:'ciclos',label:'N° Ciclos'},
+    {key:'pp',label:'Pérd. Producción m³'},
+    {key:'pa',label:'Pérd. Agregados m³'},
+    {key:'pca',label:'Pérd. CA ton'},
+    {key:'pt',label:'Total Pérd. m³'},
+    {key:'pct',label:'% Pérdida'},
+    {key:'costo',label:'Costo Aprox. (Bs.)'}
+  ];
+  exportXLSX(getData(),'Pérdidas de Producción','PérdidasProduccion_'+new Date().toISOString().slice(0,10)+'.xlsx',COLS);
+}
+
+render();
+</script>
+</body>
+</html>

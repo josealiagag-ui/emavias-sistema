@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMAVIAS - Producción Asfáltica</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.year-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px;margin-bottom:16px;}
+.year-card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #e8e8e8;overflow:hidden;transition:box-shadow .2s;}
+.year-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.13);}
+.year-card-header{background:linear-gradient(135deg,#1a5276,#154360);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;}
+.year-badge{font-size:30px;font-weight:900;letter-spacing:1px;}
+.year-card-acts{display:flex;gap:6px;}
+.year-card-acts button{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;transition:background .2s;white-space:nowrap;}
+.year-card-acts button:hover{background:rgba(255,255,255,.3);}
+.year-card-body{padding:14px 18px;}
+.year-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.year-metric{background:#f8f8f8;border-radius:8px;padding:9px 10px;text-align:center;}
+.year-metric-val{font-size:16px;font-weight:800;color:#1a5276;}
+.year-metric-lbl{font-size:10px;color:#888;margin-top:1px;text-transform:uppercase;letter-spacing:.3px;}
+.year-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px;}
+.year-card-footer{display:flex;justify-content:flex-end;padding:10px 18px;border-top:1px solid #f0f0f0;background:#fafafa;}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.52);display:flex;align-items:flex-start;justify-content:center;z-index:1000;padding:20px;overflow-y:auto;}
+.modal-xl{background:#fff;border-radius:12px;width:100%;max-width:1100px;box-shadow:0 8px 32px rgba(0,0,0,.22);margin:auto;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:15px 20px;border-bottom:1px solid #eee;}
+.modal-title{font-size:15px;font-weight:700;color:#1a5276;}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#888;line-height:1;}
+.modal-body{padding:0;}
+.modal-filters{padding:12px 14px;border-bottom:1px solid #f0f0f0;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.items-table-wrap{max-height:430px;overflow-y:auto;}
+.items-table-wrap table{width:100%;border-collapse:collapse;}
+.items-table-wrap th{position:sticky;top:0;background:#f0f0f0 !important;color:#333 !important;font-size:12px;padding:9px 10px;text-align:left;border-bottom:2px solid #ddd;z-index:2;white-space:nowrap;}
+.items-table-wrap td{font-size:12px;padding:7px 10px;border-bottom:1px solid #f5f5f5;vertical-align:middle;}
+.items-table-wrap tr:hover td{background:#fafafa;}
+.modal-footer-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid #eee;background:#fafafa;flex-wrap:wrap;gap:8px;}
+.modal{background:#fff;border-radius:12px;width:100%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,.22);}
+.modal .modal-header{padding:14px 18px;}
+.modal .modal-body{padding:16px 18px;}
+.modal .modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid #eee;}
+.import-card{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 20px;cursor:pointer;border:2.5px dashed #ccc !important;box-shadow:none !important;background:#fafafa;transition:border-color .2s,background .2s;}
+.import-card:hover{border-color:#1a5276 !important;background:#eaf0f8;}
+.import-card-icon{font-size:2.8rem;margin-bottom:10px;color:#bbb;transition:color .2s;}
+.import-card:hover .import-card-icon{color:#1a5276;}
+.import-card-title{font-size:.95rem;font-weight:700;color:#999;transition:color .2s;}
+.import-card:hover .import-card-title{color:#1a5276;}
+.import-card-sub{font-size:.78rem;color:#bbb;margin-top:5px;transition:color .2s;}
+.import-card:hover .import-card-sub{color:#4a7fa5;}
+</style>
+</head>
+<body>
+<div id="sidebarContainer"></div>
+<div class="main-content">
+  <div id="topbarContainer"></div>
+  <div class="page-content">
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb"><span>EMAVIAS</span><span class="breadcrumb-sep">›</span><span>Registros</span><span class="breadcrumb-sep">›</span><span>Producción</span></div>
+        <div class="page-title">🏭 Producción Asfáltica</div>
+        <div class="page-subtitle">Planta Achachicala — EMAVÍAS La Paz</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-outline btn-sm" onclick="triggerImport()">📥 Importar CSV</button>
+        <input type="file" id="fileImport" accept=".csv" style="display:none" onchange="handleImport(this)">
+        <a href="perdidas-prod.html" class="btn btn-secondary btn-sm">⚠️ Pérdidas</a>
+        <a href="despachos-prod.html" class="btn btn-secondary btn-sm">📋 Despachos</a>
+        <a href="form-despacho.html" class="btn btn-primary btn-sm">➕ Nuevo Despacho</a>
+      </div>
+    </div>
+
+    <div class="stats-grid" id="totalesBar" style="margin-bottom:16px;"></div>
+    <div class="year-cards-grid" id="yearCardsGrid"></div>
+    <div id="emptyState" style="display:none;" class="card">
+      <div class="empty-state">
+        <div class="empty-icon">🏭</div>
+        <div class="empty-title">Sin registros de producción</div>
+        <div class="empty-desc">Importe un CSV o registre un nuevo despacho para comenzar</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Despachos de un año -->
+<div id="modalDesp" style="display:none;" class="modal-overlay" onclick="if(event.target===this)closeDespModal()">
+  <div class="modal-xl">
+    <div class="modal-header">
+      <span class="modal-title" id="modalDespTitle">Producción 2025</span>
+      <button class="modal-close" onclick="closeDespModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-filters">
+        <div class="search-box" style="flex:1;min-width:180px;">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="modalSearch" placeholder="Buscar código EMA, destino, conductor..." oninput="renderModal()">
+        </div>
+        <select id="modalFiltMes" class="filter-control" onchange="renderModal()">
+          <option value="">Todos los meses</option>
+          <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+          <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+          <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+          <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select>
+        <select id="modalFiltTipo" class="filter-control" onchange="renderModal()">
+          <option value="">Todos los tipos</option>
+          <option value="Bacheo">Bacheo</option>
+          <option value="Carpeta">Carpeta Asfáltica</option>
+        </select>
+        <span id="modalCountBadge" class="badge badge-secondary"></span>
+      </div>
+      <div class="items-table-wrap">
+        <table>
+          <thead><tr>
+            <th style="color:#333;background:#f0f0f0;">Cód. EMA</th>
+            <th style="color:#333;background:#f0f0f0;">Destino / Ubicación</th>
+            <th style="color:#333;background:#f0f0f0;">Tipo(s) Mezcla</th>
+            <th style="color:#333;background:#f0f0f0;text-align:right;">Total m³</th>
+            <th style="color:#333;background:#f0f0f0;text-align:center;">Despachos</th>
+            <th style="color:#333;background:#f0f0f0;">Responsable</th>
+            <th style="color:#333;background:#f0f0f0;">Fechas</th>
+            <th style="color:#333;background:#f0f0f0;">Acciones</th>
+          </tr></thead>
+          <tbody id="modalTableBody"></tbody>
+        </table>
+      </div>
+      <div class="modal-footer-bar">
+        <div id="modalPagination" style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;"></div>
+        <button class="btn btn-outline btn-sm" onclick="exportModalYear()">📗 Exportar año</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmar eliminar año -->
+<div id="modalConfirmYear" style="display:none;" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title" style="color:#8B1A1A;">Confirmar eliminación</span><button class="modal-close" onclick="closeConfirmYear()">✕</button></div>
+    <div class="modal-body"><p id="confirmYearMsg"></p></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeConfirmYear()">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmDeleteYear()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmar eliminar código EMA -->
+<div id="modalConfirm" style="display:none;" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title" style="color:#8B1A1A;">Confirmar eliminación</span><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body"><p id="modalMsg"></p></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+AUTH.require();
+document.getElementById('sidebarContainer').innerHTML = renderSidebar('produccion');
+document.getElementById('topbarContainer').innerHTML = renderTopbar('Producción Asfáltica','Planta Achachicala — EMAVÍAS');
+
+const COLS = [
+  {key:'id',label:'ID'},{key:'fecha',label:'Fecha'},{key:'hora',label:'Hora'},
+  {key:'nBoleta',label:'N° Boleta'},{key:'volqueta',label:'Volqueta'},
+  {key:'conductor',label:'Conductor'},{key:'volM3',label:'Volumen m³'},
+  {key:'tipoMezcla',label:'Tipo Mezcla'},{key:'temperatura',label:'Temperatura °C'},
+  {key:'planta',label:'Planta'},{key:'responsable',label:'Responsable'},
+  {key:'codigoObra',label:'Código EMA'},{key:'destino',label:'Destino'}
+];
+
+let currentYear = null;
+let modalPage = 1;
+const modalPerPage = 10;
+let deleteEmaTarget = null;
+let deleteYearTarget = null;
+
+// ── Agrupación por año ──────────────────────────────────────────────
+function getYearGroups() {
+  const all = DB.get('despachos');
+  const map = {};
+  all.forEach(d => {
+    const yr = (d.fecha||'').slice(0,4) || 'Sin Fecha';
+    if(!map[yr]) map[yr] = [];
+    map[yr].push(d);
+  });
+  return Object.entries(map).sort((a,b) => b[0].localeCompare(a[0]));
+}
+
+function matchYear(fecha, yr) {
+  if(yr === 'Sin Fecha') return !(fecha||'').slice(0,4);
+  return (fecha||'').slice(0,4) === yr;
+}
+
+// ── Render tarjetas ─────────────────────────────────────────────────
+function renderCards() {
+  const groups = getYearGroups();
+  const all = DB.get('despachos');
+
+  // Totales globales
+  const totalEmas = new Set(all.map(d=>(d.codigoObra||'').trim()).filter(Boolean)).size;
+  const totalVol = all.reduce((s,d)=>s+(Number(d.volM3)||0),0);
+  const totalBach = all.filter(d=>d.tipoMezcla==='Bacheo').reduce((s,d)=>s+(Number(d.volM3)||0),0);
+  const totalCarp = all.filter(d=>d.tipoMezcla==='Carpeta').reduce((s,d)=>s+(Number(d.volM3)||0),0);
+  const diasProd = new Set(all.map(d=>d.fecha).filter(Boolean)).size;
+
+  document.getElementById('totalesBar').innerHTML = `
+    <div class="stat-card"><div class="stat-icon red">🏗️</div><div><div class="stat-value">${totalEmas}</div><div class="stat-label">Obras EMA Total</div></div></div>
+    <div class="stat-card"><div class="stat-icon blue">🏭</div><div><div class="stat-value">${formatNumber(totalVol,1)}</div><div class="stat-label">m³ Total Producido</div></div></div>
+    <div class="stat-card"><div class="stat-icon green">🚛</div><div><div class="stat-value">${all.length}</div><div class="stat-label">Total Despachos</div></div></div>
+    <div class="stat-card"><div class="stat-icon orange">🔷</div><div><div class="stat-value">${formatNumber(totalBach,1)}</div><div class="stat-label">m³ Bacheo</div></div></div>
+    <div class="stat-card"><div class="stat-icon red">🟠</div><div><div class="stat-value">${formatNumber(totalCarp,1)}</div><div class="stat-label">m³ Carpeta Asfáltica</div></div></div>
+    <div class="stat-card"><div class="stat-icon blue">📅</div><div><div class="stat-value">${diasProd}</div><div class="stat-label">Días de Producción</div></div></div>`;
+
+  const importCardHtml = `<div class="year-card import-card" onclick="triggerImport()" title="Importar CSV">
+    <div class="import-card-icon">📥</div>
+    <div class="import-card-title">Importar nuevos despachos</div>
+    <div class="import-card-sub">Haga clic para cargar un CSV</div>
+  </div>`;
+
+  document.getElementById('emptyState').style.display='none';
+
+  if(!groups.length) {
+    document.getElementById('yearCardsGrid').innerHTML = importCardHtml;
+    return;
+  }
+
+  document.getElementById('yearCardsGrid').innerHTML = groups.map(([yr, records]) => {
+    const emas = new Set(records.map(d=>(d.codigoObra||'').trim()).filter(Boolean));
+    const vol = records.reduce((s,d)=>s+(Number(d.volM3)||0),0);
+    const bach = records.filter(d=>d.tipoMezcla==='Bacheo').reduce((s,d)=>s+(Number(d.volM3)||0),0);
+    const carp = records.filter(d=>d.tipoMezcla==='Carpeta').reduce((s,d)=>s+(Number(d.volM3)||0),0);
+    const dias = new Set(records.map(d=>d.fecha).filter(Boolean)).size;
+    const tipos = [...new Set(records.map(d=>d.tipoMezcla).filter(Boolean))];
+    const responsables = [...new Set(records.map(d=>d.responsable).filter(Boolean))];
+    const encYr = encodeURIComponent(yr);
+    return `<div class="year-card">
+      <div class="year-card-header">
+        <div>
+          <div class="year-badge">${escHtml(yr)}</div>
+          <div style="font-size:11px;opacity:.75;margin-top:3px;">${records.length} despachos · ${emas.size} obras EMA · ${dias} días</div>
+        </div>
+        <div class="year-card-acts">
+          <button onclick="exportYear('${encYr}')">📗 Exportar</button>
+          <button onclick="askDeleteYear('${encYr}','${escHtml(yr)}')">🗑️ Eliminar</button>
+        </div>
+      </div>
+      <div class="year-card-body">
+        <div class="year-metrics">
+          <div class="year-metric"><div class="year-metric-val">${emas.size}</div><div class="year-metric-lbl">Obras EMA</div></div>
+          <div class="year-metric"><div class="year-metric-val">${formatNumber(vol,1)}</div><div class="year-metric-lbl">m³ Total</div></div>
+          <div class="year-metric"><div class="year-metric-val">${dias}</div><div class="year-metric-lbl">Días Prod.</div></div>
+          <div class="year-metric"><div class="year-metric-val">${formatNumber(bach,1)}</div><div class="year-metric-lbl">m³ Bacheo</div></div>
+          <div class="year-metric"><div class="year-metric-val">${formatNumber(carp,1)}</div><div class="year-metric-lbl">m³ Carpeta</div></div>
+          <div class="year-metric"><div class="year-metric-val">${records.length}</div><div class="year-metric-lbl">Despachos</div></div>
+        </div>
+        <div class="year-tags">
+          ${tipos.map(t=>`<span class="badge badge-secondary" style="font-size:10px;margin:2px;">${escHtml(t)}</span>`).join('')}
+        </div>
+        <div class="year-tags">
+          ${responsables.slice(0,4).map(r=>`<span class="badge" style="font-size:10px;margin:2px;background:#e8f4f8;color:#1a5276;border-radius:4px;padding:2px 7px;">${escHtml(r)}</span>`).join('')}
+          ${responsables.length>4?`<span style="font-size:10px;color:#888;">+${responsables.length-4} más</span>`:''}
+        </div>
+      </div>
+      <div class="year-card-footer">
+        <button class="btn btn-primary btn-sm" onclick="openDespModal('${encYr}')">👁️ Ver Despachos</button>
+      </div>
+    </div>`;
+  }).join('') + importCardHtml;
+}
+
+// ── Modal despachos de un año ───────────────────────────────────────
+function openDespModal(encYr) {
+  currentYear = decodeURIComponent(encYr);
+  modalPage = 1;
+  document.getElementById('modalDespTitle').textContent = `Producción ${currentYear}`;
+  document.getElementById('modalSearch').value = '';
+  document.getElementById('modalFiltMes').value = '';
+  document.getElementById('modalFiltTipo').value = '';
+  document.getElementById('modalDesp').style.display='flex';
+  renderModal();
+}
+function closeDespModal() { document.getElementById('modalDesp').style.display='none'; currentYear=null; }
+
+function getModalData() {
+  let data = DB.get('despachos').filter(d => matchYear(d.fecha, currentYear));
+  const q = document.getElementById('modalSearch').value.trim().toLowerCase();
+  const fm = document.getElementById('modalFiltMes').value;
+  const ft = document.getElementById('modalFiltTipo').value;
+  if(q) data = data.filter(d=>
+    (d.codigoObra||'').toLowerCase().includes(q) ||
+    (d.destino||'').toLowerCase().includes(q) ||
+    (d.conductor||'').toLowerCase().includes(q) ||
+    (d.responsable||'').toLowerCase().includes(q)
+  );
+  if(fm) data = data.filter(d=>(d.fecha||'').slice(5,7)===fm);
+  if(ft) data = data.filter(d=>d.tipoMezcla===ft);
+  return data;
+}
+
+function getModalGroups(data) {
+  const map = {};
+  data.forEach(d => {
+    const key = (d.codigoObra||'').trim() || '(sin código)';
+    if(!map[key]) map[key] = { codigo: key, destinos: new Set(), tipos: new Set(), responsables: new Set(), vol: 0, n: 0, fechas: [] };
+    map[key].vol += Number(d.volM3)||0;
+    map[key].n++;
+    if(d.destino) map[key].destinos.add(d.destino);
+    if(d.tipoMezcla) map[key].tipos.add(d.tipoMezcla);
+    if(d.responsable) map[key].responsables.add(d.responsable);
+    if(d.fecha) map[key].fechas.push(d.fecha);
+  });
+  return Object.values(map).sort((a,b)=>a.codigo.localeCompare(b.codigo));
+}
+
+function renderModal() {
+  const data = getModalData();
+  const groups = getModalGroups(data);
+  const total = groups.length;
+  const pages = Math.max(1, Math.ceil(total/modalPerPage));
+  if(modalPage > pages) modalPage = 1;
+  const slice = groups.slice((modalPage-1)*modalPerPage, modalPage*modalPerPage);
+  document.getElementById('modalCountBadge').textContent = `${total} obras EMA · ${data.length} despachos`;
+
+  document.getElementById('modalTableBody').innerHTML = slice.length ? slice.map(g => {
+    const destino = [...g.destinos].join(', ') || '—';
+    const tipos = [...g.tipos];
+    const resp = [...g.responsables].join(', ') || '—';
+    const fechasOrd = [...g.fechas].sort();
+    const fechaRng = fechasOrd.length > 1
+      ? `${formatDate(fechasOrd[0])} — ${formatDate(fechasOrd[fechasOrd.length-1])}`
+      : formatDate(fechasOrd[0]||'');
+    const enc = encodeURIComponent(g.codigo);
+    return `<tr>
+      <td><strong style="color:#1a5276;">${escHtml(g.codigo)}</strong></td>
+      <td style="max-width:180px;"><div style="font-size:11px;">${escHtml(destino)}</div></td>
+      <td>${tipos.map(t=>`<span class="badge badge-secondary" style="margin:1px;">${escHtml(t)}</span>`).join('')||'—'}</td>
+      <td style="text-align:right;"><strong>${formatNumber(g.vol,1)}</strong></td>
+      <td style="text-align:center;"><span class="badge badge-secondary">${g.n}</span></td>
+      <td style="font-size:11px;">${escHtml(resp)}</td>
+      <td style="font-size:11px;color:#666;">${fechaRng}</td>
+      <td><div class="table-actions">
+        <a href="despachos-prod.html?codigo=${enc}" class="btn btn-secondary btn-sm btn-icon" title="Ver despachos">👁️</a>
+        <a href="form-despacho.html?codigo=${enc}" class="btn btn-info btn-sm btn-icon" title="Nuevo despacho">➕</a>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="askDelete('${enc}','${escHtml(g.codigo)}')" title="Eliminar todos">🗑️</button>
+      </div></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="8" style="text-align:center;padding:32px;color:#999;">Sin resultados con los filtros aplicados</td></tr>`;
+
+  // Paginación
+  let pg = '';
+  if(pages > 1) {
+    if(modalPage>1) pg+=`<button class="page-btn" onclick="goModalPage(${modalPage-1})">‹</button>`;
+    for(let i=1;i<=pages;i++) pg+=`<button class="page-btn${i===modalPage?' active':''}" onclick="goModalPage(${i})">${i}</button>`;
+    if(modalPage<pages) pg+=`<button class="page-btn" onclick="goModalPage(${modalPage+1})">›</button>`;
+  }
+  if(total>0) pg += `<span class="page-info">${Math.min((modalPage-1)*modalPerPage+1,total)}-${Math.min(modalPage*modalPerPage,total)} de ${total}</span>`;
+  document.getElementById('modalPagination').innerHTML = pg;
+}
+
+function goModalPage(p) { modalPage=p; renderModal(); }
+
+// ── Exportar ────────────────────────────────────────────────────────
+function exportYear(encYr) {
+  const yr = decodeURIComponent(encYr);
+  const data = DB.get('despachos').filter(d => matchYear(d.fecha, yr));
+  exportXLSX(data, `Producción ${yr}`, `ProduccionAsfaltica_${yr}_${new Date().toISOString().slice(0,10)}.xlsx`, COLS);
+}
+function exportModalYear() { if(currentYear) exportYear(encodeURIComponent(currentYear)); }
+
+// ── Eliminar código EMA ─────────────────────────────────────────────
+function askDelete(enc, label) {
+  deleteEmaTarget = decodeURIComponent(enc);
+  document.getElementById('modalMsg').textContent = `¿Eliminar TODOS los despachos del código "${label}"? Esta acción no se puede deshacer.`;
+  document.getElementById('modalConfirm').style.display='flex';
+}
+function closeModal() { document.getElementById('modalConfirm').style.display='none'; deleteEmaTarget=null; }
+function confirmDelete() {
+  if(!deleteEmaTarget){ closeModal(); return; }
+  let desp = DB.get('despachos');
+  const before = desp.length;
+  desp = desp.filter(d=>(d.codigoObra||'').trim()!==deleteEmaTarget);
+  DB.set('despachos', desp);
+  closeModal();
+  renderModal();
+  renderCards();
+  if(desp.length < before) toast('Despachos eliminados','success');
+}
+
+// ── Eliminar año completo ───────────────────────────────────────────
+function askDeleteYear(encYr, label) {
+  deleteYearTarget = decodeURIComponent(encYr);
+  document.getElementById('confirmYearMsg').textContent = `¿Eliminar TODOS los despachos del año "${label}"? Esta acción no se puede deshacer.`;
+  document.getElementById('modalConfirmYear').style.display='flex';
+}
+function closeConfirmYear() { document.getElementById('modalConfirmYear').style.display='none'; deleteYearTarget=null; }
+function confirmDeleteYear() {
+  if(!deleteYearTarget){ closeConfirmYear(); return; }
+  let desp = DB.get('despachos');
+  const before = desp.length;
+  desp = desp.filter(d => !matchYear(d.fecha, deleteYearTarget));
+  DB.set('despachos', desp);
+  closeConfirmYear();
+  renderCards();
+  if(desp.length < before) toast('Registros del año eliminados','success');
+}
+
+// ── Importar CSV ────────────────────────────────────────────────────
+function triggerImport() { document.getElementById('fileImport').click(); }
+function handleImport(input) {
+  importCSV(input, function(rows) {
+    if(!rows.length) return;
+    const existing = DB.get('despachos');
+    // Dedup: omitir por fecha+nBoleta (o fecha+hora+volqueta si sin boleta)
+    const existingKeys = new Set(existing.map(d => {
+      const nb = d.nBoleta||'';
+      return nb ? d.fecha+'|'+nb : d.fecha+'|'+d.hora+'|'+d.volqueta;
+    }));
+    let added = 0, dupes = 0;
+    rows.forEach(r => {
+      if(!r.fecha && !r.codigoObra) return;
+      const nb = r.nBoleta||r.n_boleta||'';
+      const hora = r.hora||'';
+      const volq = r.volqueta||'';
+      const key = nb ? (r.fecha||'')+'|'+nb : (r.fecha||'')+'|'+hora+'|'+volq;
+      if(existingKeys.has(key)){ dupes++; return; }
+      existingKeys.add(key);
+      const rec = {
+        id: DB.nextId('despachos'),
+        fecha: r.fecha||'', hora, nBoleta: nb,
+        volqueta: volq, conductor: r.conductor||'',
+        volM3: parseFloat(r.volM3||r.vol_m3||0)||0,
+        tipoMezcla: r.tipoMezcla||r.tipo_mezcla||'',
+        temperatura: parseFloat(r.temperatura||160)||160,
+        planta: r.planta||'Ciber', responsable: r.responsable||'',
+        codigoObra: r.codigoObra||r.codigo_obra||'', destino: r.destino||''
+      };
+      existing.push(rec);
+      added++;
+    });
+    DB.set('despachos', existing);
+    const msg = added+' despachos agregados'+(dupes?' · '+dupes+' ya existían (omitidos)':'');
+    toast(msg, 'success');
+    input.value = '';
+    renderCards();
+  });
+}
+
+renderCards();
+</script>
+</body>
+</html>
