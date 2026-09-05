@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EMAVIAS — Registro Hora Extra</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.calc-box{background:#f8f0f0;border:2px solid #8B1A1A;border-radius:10px;padding:20px;margin-top:6px;}
+.calc-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.calc-item{text-align:center;}
+.calc-label{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.calc-val{font-size:26px;font-weight:900;color:#8B1A1A;line-height:1;}
+.calc-val.blue{color:#003580;}
+.calc-val.orange{color:#b85c00;}
+.calc-val.dark{color:#333;}
+.calc-val.big{font-size:36px;}
+.day-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-weight:700;font-size:13px;margin-top:6px;}
+.day-lv{background:#e8f0ff;color:#003580;border:1.5px solid #003580;}
+.day-sdf{background:#fff3e0;color:#b85c00;border:1.5px solid #b85c00;}
+.day-fer{background:#fce4e4;color:#8B1A1A;border:1.5px solid #8B1A1A;}
+.venc-box{background:#fffde7;border:1.5px solid #f0c000;border-radius:8px;padding:10px 16px;font-size:13px;margin-top:10px;display:none;}
+.fs{background:#fff;border:1px solid #e5e5e5;border-radius:10px;margin-bottom:16px;overflow:hidden;}
+.fs-hdr{padding:12px 20px;font-weight:700;font-size:13px;letter-spacing:.5px;color:#fff;}
+.fs-hdr.az{background:#003580;} .fs-hdr.ro{background:#8B1A1A;} .fs-hdr.vd{background:#1a7a3a;} .fs-hdr.gr{background:#444;}
+.fs-body{padding:18px 20px;}
+.fg-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fg-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg label{font-size:12px;font-weight:600;color:#555;}
+.fg input,.fg select,.fg textarea{padding:9px 12px;border:1.5px solid #ddd;border-radius:7px;font-size:13px;font-family:inherit;transition:border-color .2s;}
+.fg input:focus,.fg select:focus{outline:none;border-color:#8B1A1A;}
+.fg input[readonly]{background:#f5f5f5;color:#666;cursor:default;}
+</style>
+</head>
+<body>
+<div id="sidebarContainer"></div>
+<div class="main-content">
+  <div id="topbarContainer"></div>
+  <div class="page-content">
+
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb"><span>EMAVIAS</span><span class="breadcrumb-sep">›</span><span><a href="horas-extra.html" style="color:inherit;">Horas Extra</a></span><span class="breadcrumb-sep">›</span><span id="bcTitle">Nuevo Registro</span></div>
+        <div class="page-title" id="pageTitle">➕ Nuevo Registro de Hora Extra</div>
+        <div class="page-subtitle">Planta Achachicala — EMAVÍAS La Paz</div>
+      </div>
+      <div class="page-actions">
+        <a href="horas-extra.html" class="btn btn-secondary btn-sm">← Volver</a>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 1: Período y Fecha -->
+    <div class="fs">
+      <div class="fs-hdr az">📅 1. Período y Fecha</div>
+      <div class="fs-body">
+        <div class="fg-grid3">
+          <div class="fg">
+            <label>Período <span style="color:red">*</span></label>
+            <select id="f_periodo" onchange="onPeriodoChange()">
+              <option value="">— Seleccione período —</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Fecha <span style="color:red">*</span></label>
+            <input type="date" id="f_fecha" onchange="onFechaChange()">
+          </div>
+          <div class="fg">
+            <label>Tipo de Día</label>
+            <div id="dayBadge" style="margin-top:2px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 2: Trabajador -->
+    <div class="fs">
+      <div class="fs-hdr ro">👷 2. Identificación del Trabajador</div>
+      <div class="fs-body">
+        <div class="fg-grid3">
+          <div class="fg">
+            <label>C.I. del Trabajador <span style="color:red">*</span></label>
+            <input type="text" id="f_ci" placeholder="Ej: 4910970 LP" list="listCI" oninput="onCiChange()" required>
+            <datalist id="listCI"></datalist>
+          </div>
+          <div class="fg" style="grid-column:span 2;">
+            <label>Apellido y Nombre <span style="color:red">*</span></label>
+            <input type="text" id="f_nombre" placeholder="Se completa automáticamente al ingresar CI" list="listNombres" required>
+            <datalist id="listNombres"></datalist>
+          </div>
+        </div>
+        <div class="fg-grid" style="margin-top:14px;">
+          <div class="fg">
+            <label>Grupo / Área</label>
+            <select id="f_grupo">
+              <option>ASFALTO 1</option><option>ASFALTO 2</option><option>ASFALTO 3</option>
+              <option>BACHEO 1</option><option>BACHEO 2</option>
+              <option>PLANTA ASFALTADORA</option><option>MTTO Y TRANSPORTE</option>
+              <option>CHOFER GT</option><option>CALDERISTA</option><option>AVANZADA</option>
+              <option>GERENCIA TECNICA</option><option>ADMINISTRACION</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Permanencia</label>
+            <select id="f_perm">
+              <option>PERMANENTE</option><option>EVENTUAL</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 3: Horas -->
+    <div class="fs">
+      <div class="fs-hdr vd">⏱️ 3. Horas Extra Realizadas</div>
+      <div class="fs-body">
+        <div class="fg-grid3">
+          <div class="fg">
+            <label>Hora Inicio Extra <span style="color:red">*</span></label>
+            <input type="time" id="f_horaInicio" onchange="calcHoras()" required>
+            <span style="font-size:11px;color:#888;margin-top:2px;">Inicio del tiempo extra</span>
+          </div>
+          <div class="fg">
+            <label>Hora Extra Fin <span style="color:red">*</span></label>
+            <input type="time" id="f_horaFin" onchange="calcHoras()" required>
+            <span style="font-size:11px;color:#888;margin-top:2px;">Fin del tiempo extra</span>
+          </div>
+          <div class="fg">
+            <label>Tipo de Registro</label>
+            <select id="f_tipo" onchange="onTipoChange()">
+              <option value="C">C — Compensación (90 días)</option>
+              <option value="X">X — Extra pagado</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Resultado automático -->
+        <div class="calc-box" style="margin-top:18px;">
+          <div style="font-size:12px;font-weight:700;color:#8B1A1A;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;">⚡ Cálculo Automático</div>
+          <div class="calc-row">
+            <div class="calc-item">
+              <div class="calc-label">Total Horas<br>Trabajadas</div>
+              <div class="calc-val dark" id="r_totalH">—</div>
+            </div>
+            <div class="calc-item">
+              <div class="calc-label" id="r_lv_label">Horas L/V<br>(×1 normal)</div>
+              <div class="calc-val blue" id="r_lv">—</div>
+            </div>
+            <div class="calc-item">
+              <div class="calc-label" id="r_sd_label">Horas S/D/F<br>(×2 diurnas)</div>
+              <div class="calc-val orange" id="r_sd">—</div>
+            </div>
+            <div class="calc-item">
+              <div class="calc-label" id="r_noc_label">Horas Nocturnas<br>20:00–6:00</div>
+              <div class="calc-val dark" id="r_noc">—</div>
+            </div>
+            <div class="calc-item" style="border-left:2px solid #8B1A1A;padding-left:12px;">
+              <div class="calc-label">TOTAL FINAL<br>Equivalente</div>
+              <div class="calc-val big" id="r_totalF">—</div>
+            </div>
+          </div>
+          <div id="calcNote" style="font-size:11px;color:#888;margin-top:10px;font-style:italic;"></div>
+        </div>
+
+        <!-- Vencimiento compensación -->
+        <div id="vencBox" class="venc-box">
+          <strong>⏳ Vencimiento compensación:</strong> <span id="vencFecha" style="font-weight:700;color:#8B1A1A;"></span>
+          — Las horas de compensación tienen un plazo máximo de <strong>90 días</strong> para ser utilizadas.
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 4: Trabajo y observaciones -->
+    <div class="fs">
+      <div class="fs-hdr gr">📋 4. Detalle del Trabajo</div>
+      <div class="fs-body">
+        <div class="fg-grid">
+          <div class="fg">
+            <label>Trabajo Realizado</label>
+            <input type="text" id="f_trabajo" placeholder="Ej: ORDEN DE DESPACHO 236/2026, APOYO FERIA CIRCULAR...">
+          </div>
+          <div class="fg">
+            <label>Observaciones</label>
+            <input type="text" id="f_obs" placeholder="Notas adicionales...">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:flex-end;padding:6px 0 20px;">
+      <a href="horas-extra.html" class="btn btn-outline">✖ Cancelar</a>
+      <button class="btn btn-secondary" type="button" onclick="resetForm()">🧹 Limpiar</button>
+      <button class="btn btn-primary" onclick="saveRecord()" id="btnGuardar">💾 Registrar Hora Extra</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+AUTH.require();
+document.getElementById('sidebarContainer').innerHTML = renderSidebar('horas-extra');
+document.getElementById('topbarContainer').innerHTML = renderTopbar('Registro Hora Extra','Nuevo registro de tiempo extra');
+
+/* ─────────────────────────────────────────
+   PERÍODOS — clave yyyy-mm (mes de inicio)
+   Período: del 21 del mes anterior al 20 del mes actual
+───────────────────────────────────────── */
+const MESES_PER=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+/* Deriva la clave yyyy-mm de un período a partir de una fecha "YYYY-MM-DD" */
+function periodoKeyFromFecha(fecha){
+  if(!fecha) return '';
+  const parts=fecha.split('-');
+  const yyyy=parseInt(parts[0],10), mm=parseInt(parts[1],10), dd=parseInt(parts[2],10);
+  if(!yyyy||!mm||!dd) return '';
+  let sy, sm;
+  if(dd>=21){ sy=yyyy; sm=mm; }
+  else { sm=mm===1?12:mm-1; sy=mm===1?yyyy-1:yyyy; }
+  return `${sy}-${String(sm).padStart(2,'0')}`;
+}
+
+function buildPeriodos(){
+  const periodos=[];
+  const now=new Date();
+  for(let offset=-12;offset<=3;offset++){
+    const d=new Date(now.getFullYear(),now.getMonth()+offset,1);
+    const y=d.getFullYear(), m=d.getMonth(); // m=0..11 (mes de cierre)
+    // El período empieza el 21 del mes anterior y termina el 20 del mes actual
+    const prevM=m===0?11:m-1;
+    const prevY=m===0?y-1:y;
+    // Clave: yyyy-mm del mes de INICIO
+    const key=`${prevY}-${String(prevM+1).padStart(2,'0')}`;
+    const label=`Período: 21 ${MESES_PER[prevM]} ${prevY} — 20 ${MESES_PER[m]} ${y}`;
+    periodos.push({value:key, label:label});
+  }
+  const sel=document.getElementById('f_periodo');
+  periodos.forEach(p=>{const o=document.createElement('option');o.value=p.value;o.textContent=p.label;sel.appendChild(o);});
+  // Seleccionar período actual según la fecha de hoy
+  const curKey=periodoKeyFromFecha(today());
+  if(curKey) sel.value=curKey;
+}
+
+function onPeriodoChange(){
+  const f=document.getElementById('f_fecha').value;
+  if(!f){ document.getElementById('f_fecha').value=today(); onFechaChange(); }
+}
+
+/* ─────────────────────────────────────────
+   FERIADOS
+───────────────────────────────────────── */
+function getFeriados(){ return DB.get('feriados').map(f=>f.fecha); }
+
+/* ─────────────────────────────────────────
+   TIPO DE DÍA
+───────────────────────────────────────── */
+const DIAS_ES=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+function onFechaChange(){
+  const fecha=document.getElementById('f_fecha').value;
+  if(!fecha){ document.getElementById('dayBadge').innerHTML=''; return; }
+
+  // Auto-actualizar el período al cambiar la fecha
+  const derivedKey=periodoKeyFromFecha(fecha);
+  const selPer=document.getElementById('f_periodo');
+  if(derivedKey && selPer.querySelector(`option[value="${derivedKey}"]`)){
+    selPer.value=derivedKey;
+  }
+
+  const d=new Date(fecha+'T12:00:00');
+  const dow=d.getDay(); // 0=Dom
+  const feriados=getFeriados();
+  const esFeriado=feriados.includes(fecha);
+  let cls='day-lv', txt='', icon='';
+  if(esFeriado){ cls='day-fer'; txt='FERIADO'; icon='🎌'; }
+  else if(dow===0){ cls='day-sdf'; txt='Domingo'; icon='📅'; }
+  else if(dow===6){ cls='day-sdf'; txt='Sábado'; icon='📅'; }
+  else { cls='day-lv'; txt=DIAS_ES[dow]+' (L/V)'; icon='💼'; }
+  const ferNombre=esFeriado?(DB.get('feriados').find(f=>f.fecha===fecha)||{}).nombre||'':' ';
+  document.getElementById('dayBadge').innerHTML=`<span class="day-badge ${cls}">${icon} ${txt}</span>${esFeriado?`<div style="font-size:11px;color:#8B1A1A;margin-top:4px;">${escHtml(ferNombre)}</div>`:''}`;
+  calcHoras();
+  updateVencimiento();
+}
+
+/* ─────────────────────────────────────────
+   AUTOCOMPLETE CI → NOMBRE
+───────────────────────────────────────── */
+function buildDatalist(){
+  const trabajadores=DB.get('trabajadores');
+  const dlCI=document.getElementById('listCI');
+  const dlN=document.getElementById('listNombres');
+  trabajadores.forEach(t=>{
+    const o1=document.createElement('option'); o1.value=t.ci; o1.textContent=t.nombre; dlCI.appendChild(o1);
+    const o2=document.createElement('option'); o2.value=t.nombre; dlN.appendChild(o2);
+  });
+}
+function onCiChange(){
+  const ci=document.getElementById('f_ci').value.trim();
+  const trabajadores=DB.get('trabajadores');
+  const t=trabajadores.find(w=>w.ci.toLowerCase()===ci.toLowerCase()||w.ci.replace(/\s/g,'').toLowerCase()===ci.replace(/\s/g,'').toLowerCase());
+  if(t){
+    document.getElementById('f_nombre').value=t.nombre;
+    const sel=document.getElementById('f_grupo');
+    for(let i=0;i<sel.options.length;i++){ if(sel.options[i].value===t.grupo){sel.selectedIndex=i;break;} }
+  }
+}
+
+/* ─────────────────────────────────────────
+   CÁLCULO DE HORAS EXTRA
+   Reglas:
+     L/V diurnas  (06:00–20:00)  × 1.0
+     L/V nocturnas (20:00–06:00) × 1.5
+     S/D/F diurnas               × 2.0
+     S/D/F nocturnas (20:00–06:00) × 3.0  (= 2 × 1.5)
+
+   Campos almacenados:
+     lv       = horas DIURNAS en L/V
+     sd       = horas DIURNAS en S/D/F   ← SOLO diurnas
+     nocturno = horas NOCTURNAS (sin importar el tipo de día)
+     totalHoras = lv + sd + nocturno      ← siempre cuadra
+     totalFinal = equivalente ponderado
+───────────────────────────────────────── */
+function toMin(t){ const [h,m]=t.split(':').map(Number); return h*60+m; }
+
+function calcHoras(){
+  const fecha=document.getElementById('f_fecha').value;
+  const hi=document.getElementById('f_horaInicio').value;
+  const hf=document.getElementById('f_horaFin').value;
+  if(!fecha||!hi||!hf){ resetCalc(); return; }
+
+  let startMin=toMin(hi), endMin=toMin(hf);
+  if(endMin<=startMin) endMin+=24*60; // cruza medianoche
+  const totalMin=endMin-startMin;
+  const totalHoras=+(totalMin/60).toFixed(2);
+
+  // Franja nocturna: 20:00 (1200min) – 06:00 del día siguiente (1800min=30*60)
+  const N1=20*60, N2=30*60;
+  const nStart=Math.max(startMin,N1), nEnd=Math.min(endMin,N2);
+  const nightMin=nStart<nEnd ? nEnd-nStart : 0;
+  const dayMin=totalMin-nightMin;
+
+  const feriados=getFeriados();
+  const d=new Date(fecha+'T12:00:00');
+  const dow=d.getDay();
+  const esFeriado=feriados.includes(fecha);
+  const esSD=dow===0||dow===6||esFeriado;
+
+  let lv=0, sd=0, nocturno=0, totalFinal=0, note='';
+  const lblNoc=document.getElementById('r_noc_label');
+
+  if(esSD){
+    // S/D/F: diurnas ×2 | nocturnas ×3 (= 2 × 1.5)
+    sd      = +(dayMin/60).toFixed(2);    // SOLO horas diurnas en S/D/F
+    nocturno= +(nightMin/60).toFixed(2);  // horas nocturnas
+    const eqDia=dayMin/60*2, eqNoc=nightMin/60*3;
+    totalFinal=+(eqDia+eqNoc).toFixed(2);
+    const tipoDia=esFeriado?'Feriado':(dow===6?'Sábado':'Domingo');
+    note=`${tipoDia}: ${sd}h diurnas ×2 = ${eqDia.toFixed(2)}h equiv.`
+        +(nightMin>0 ? ` + ${nocturno}h nocturnas ×3 = ${eqNoc.toFixed(2)}h equiv.` : '')
+        +` → Total ${totalFinal}h equiv.`;
+    if(lblNoc) lblNoc.innerHTML='Horas Nocturnas<br>20:00–6:00 (×3 S/D/F)';
+  } else {
+    // L/V: diurnas ×1 | nocturnas ×1.5
+    lv      = +(dayMin/60).toFixed(2);
+    nocturno= +(nightMin/60).toFixed(2);
+    const eqDia=dayMin/60, eqNoc=nightMin/60*1.5;
+    totalFinal=+(eqDia+eqNoc).toFixed(2);
+    note=`L/V: ${lv}h diurnas ×1`
+        +(nightMin>0 ? ` + ${nocturno}h nocturnas ×1.5 = ${eqNoc.toFixed(2)}h equiv.` : '')
+        +` → Total ${totalFinal}h equiv.`;
+    if(lblNoc) lblNoc.innerHTML='Horas Nocturnas<br>20:00–6:00 (×1.5 L/V)';
+  }
+
+  document.getElementById('r_totalH').textContent=totalHoras.toFixed(2);
+  document.getElementById('r_lv').textContent=lv.toFixed(2);
+  document.getElementById('r_sd').textContent=sd.toFixed(2);
+  document.getElementById('r_noc').textContent=nocturno.toFixed(2);
+  document.getElementById('r_totalF').textContent=totalFinal.toFixed(2);
+  document.getElementById('calcNote').textContent=note;
+  updateVencimiento();
+}
+
+function resetCalc(){
+  ['r_totalH','r_lv','r_sd','r_noc','r_totalF'].forEach(id=>document.getElementById(id).textContent='—');
+  document.getElementById('calcNote').textContent='';
+  const lblNoc=document.getElementById('r_noc_label');
+  if(lblNoc) lblNoc.innerHTML='Horas Nocturnas<br>20:00–6:00';
+}
+
+/* ─────────────────────────────────────────
+   VENCIMIENTO COMPENSACIÓN (90 días)
+───────────────────────────────────────── */
+function updateVencimiento(){
+  const tipo=document.getElementById('f_tipo').value;
+  const fecha=document.getElementById('f_fecha').value;
+  const box=document.getElementById('vencBox');
+  if(tipo==='C'&&fecha){
+    const d=new Date(fecha+'T12:00:00');
+    d.setDate(d.getDate()+90);
+    const venc=d.toISOString().split('T')[0];
+    document.getElementById('vencFecha').textContent=formatDate(venc);
+    box.style.display='block';
+    box.dataset.venc=venc;
+  } else {
+    box.style.display='none';
+    box.dataset.venc='';
+  }
+}
+function onTipoChange(){ updateVencimiento(); }
+
+/* ─────────────────────────────────────────
+   GUARDAR REGISTRO
+───────────────────────────────────────── */
+function saveRecord(){
+  const periodo=document.getElementById('f_periodo').value;
+  const fecha=document.getElementById('f_fecha').value;
+  const ci=document.getElementById('f_ci').value.trim();
+  const nombre=document.getElementById('f_nombre').value.trim();
+  const hi=document.getElementById('f_horaInicio').value;
+  const hf=document.getElementById('f_horaFin').value;
+  if(!periodo||!fecha||!ci||!nombre||!hi||!hf){
+    toast('Complete los campos obligatorios marcados con *','error'); return;
+  }
+  const totalF=parseFloat(document.getElementById('r_totalF').textContent)||0;
+  if(totalF===0||isNaN(totalF)){
+    toast('Ingrese horas válidas','error'); return;
+  }
+  const tipo=document.getElementById('f_tipo').value;
+  const venc=document.getElementById('vencBox').dataset.venc||'';
+  const rec={
+    id: editId||DB.nextId('horas_extra'),
+    fecha, periodo, ci, nombre,
+    grupo: document.getElementById('f_grupo').value,
+    trabajo: document.getElementById('f_trabajo').value.trim(),
+    tipo, permanencia: document.getElementById('f_perm').value,
+    horaSalida: hi, horaExtra: hf,
+    totalHoras: parseFloat(document.getElementById('r_totalH').textContent)||0,
+    lv:       parseFloat(document.getElementById('r_lv').textContent)||0,
+    sd:       parseFloat(document.getElementById('r_sd').textContent)||0,
+    nocturno: parseFloat(document.getElementById('r_noc').textContent)||0,
+    totalFinal: totalF,
+    vencimiento: tipo==='C'?venc:'',
+    observaciones: document.getElementById('f_obs').value.trim()
+  };
+  let data=DB.get('horas_extra');
+  if(editId){ data=data.map(h=>h.id===editId?rec:h); }
+  else { data.push(rec); }
+  DB.set('horas_extra',data);
+  toast(editId?'Registro actualizado':'Hora extra registrada correctamente','success');
+  setTimeout(()=>window.location.href='horas-extra.html',1100);
+}
+
+/* ─────────────────────────────────────────
+   EDITAR (si viene ?id=)
+───────────────────────────────────────── */
+let editId=null;
+function loadEdit(){
+  const params=new URLSearchParams(window.location.search);
+  const id=parseInt(params.get('id'));
+  if(!id) return;
+  const rec=DB.get('horas_extra').find(h=>h.id===id);
+  if(!rec) return;
+  editId=id;
+  document.getElementById('pageTitle').textContent='✏️ Editar Registro de Hora Extra';
+  document.getElementById('bcTitle').textContent='Editar Registro';
+  document.getElementById('btnGuardar').textContent='💾 Actualizar Registro';
+
+  document.getElementById('f_fecha').value=rec.fecha||'';
+  document.getElementById('f_ci').value=rec.ci||'';
+  document.getElementById('f_nombre').value=rec.nombre||'';
+
+  // Período: derivar de la fecha (compatible con cualquier formato anterior)
+  const derivedKey=periodoKeyFromFecha(rec.fecha||'');
+  const selPer=document.getElementById('f_periodo');
+  // Intentar primero el valor guardado (formato nuevo yyyy-mm)
+  if(rec.periodo && selPer.querySelector(`option[value="${rec.periodo}"]`)){
+    selPer.value=rec.periodo;
+  } else if(derivedKey && selPer.querySelector(`option[value="${derivedKey}"]`)){
+    selPer.value=derivedKey;
+  }
+
+  const sg=document.getElementById('f_grupo');
+  for(let i=0;i<sg.options.length;i++) if(sg.options[i].value===rec.grupo){sg.selectedIndex=i;break;}
+  document.getElementById('f_perm').value=rec.permanencia||'PERMANENTE';
+  document.getElementById('f_horaInicio').value=rec.horaSalida||'';
+  document.getElementById('f_horaFin').value=rec.horaExtra||'';
+  document.getElementById('f_tipo').value=rec.tipo||'C';
+  document.getElementById('f_trabajo').value=rec.trabajo||'';
+  document.getElementById('f_obs').value=rec.observaciones||'';
+  onFechaChange(); calcHoras();
+}
+
+function resetForm(){
+  document.getElementById('f_ci').value='';
+  document.getElementById('f_nombre').value='';
+  document.getElementById('f_horaInicio').value='';
+  document.getElementById('f_horaFin').value='';
+  document.getElementById('f_trabajo').value='';
+  document.getElementById('f_obs').value='';
+  resetCalc();
+}
+
+/* ─── Init ─── */
+buildPeriodos();
+buildDatalist();
+loadEdit();
+if(!editId){
+  document.getElementById('f_fecha').value=today();
+  onFechaChange();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EMAVIAS — Despacho de Mezcla Asfáltica</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="sidebarContainer"></div>
+<div class="main-content">
+  <div id="topbarContainer"></div>
+  <div class="page-content">
+
+    <div class="page-header">
+      <div>
+        <div class="page-title" id="pageTitle">➕ Nuevo Despacho de Mezcla</div>
+        <div class="page-subtitle">Planta Achachicala — EMAVÍAS</div>
+      </div>
+      <div class="page-actions">
+        <a href="despachos-prod.html" class="btn btn-secondary btn-sm">← Volver</a>
+      </div>
+    </div>
+
+    <form id="frmDespacho" onsubmit="guardar(event)" style="max-width:860px;">
+
+      <!-- Sección 1: Identificación -->
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-header" style="background:var(--primary);color:#fff;">
+          <h3 style="color:#fff;">🚛 1. Identificación del Despacho</h3>
+        </div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">
+            <div class="form-group">
+              <label class="form-label">Fecha *</label>
+              <input type="date" id="f_fecha" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hora</label>
+              <input type="time" id="f_hora" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label">N° de Boleta</label>
+              <input type="text" id="f_nBoleta" class="form-control" placeholder="3174, 3420...">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección 2: Volqueta y Conductor -->
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-header" style="background:#8B1A1A;color:#fff;">
+          <h3 style="color:#fff;">🚛 2. Volqueta y Conductor</h3>
+        </div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="form-group">
+              <label class="form-label">N° Volqueta *</label>
+              <input type="text" id="f_volqueta" class="form-control" required placeholder="CV-01, VH-39..." list="lista-volquetas">
+              <datalist id="lista-volquetas"></datalist>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Conductor *</label>
+              <input type="text" id="f_conductor" class="form-control" required placeholder="Nombre del conductor" list="lista-conductores">
+              <datalist id="lista-conductores"></datalist>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección 3: Especificaciones de Mezcla -->
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-header" style="background:#1E6B2E;color:#fff;">
+          <h3 style="color:#fff;">⚙️ 3. Especificaciones de Mezcla</h3>
+        </div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label">Volumen m³ *</label>
+              <input type="number" id="f_volM3" class="form-control" required min="0.5" max="20" step="0.5" placeholder="6, 8, 12..." style="font-size:16px;font-weight:700;">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tipo de Mezcla *</label>
+              <select id="f_tipoMezcla" class="form-control" required>
+                <option value="">-- Seleccione --</option>
+                <option value="Bacheo">Bacheo</option>
+                <option value="Carpeta">Carpeta Asfáltica</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Temperatura °C</label>
+              <input type="number" id="f_temperatura" class="form-control" min="140" max="185" value="160">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="form-group">
+              <label class="form-label">Planta</label>
+              <select id="f_planta" class="form-control">
+                <option value="Ciber">Ciber</option>
+                <option value="OMIP">OMIP</option>
+                <option value="Otra">Otra</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Responsable de Obra</label>
+              <input type="text" id="f_responsable" class="form-control" placeholder="Victor 21, INTECONS..." list="lista-responsables">
+              <datalist id="lista-responsables"></datalist>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección 4: Destino y Proyecto -->
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-header" style="background:#2D2D2D;color:#fff;">
+          <h3 style="color:#fff;">📍 4. Destino y Proyecto</h3>
+        </div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="form-group">
+              <label class="form-label">Código de Obra (EMA)</label>
+              <input type="text" id="f_codigoObra" class="form-control" placeholder="EMA-36, EMA-45..." list="lista-obras">
+              <datalist id="lista-obras"></datalist>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Destino / Ubicación</label>
+              <input type="text" id="f_destino" class="form-control" placeholder="Mallasilla Calle 9, Av. Landaeta...">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <a href="despachos-prod.html" class="btn btn-secondary">✖ Cancelar</a>
+        <button type="button" class="btn btn-secondary" onclick="if(confirm('¿Limpiar el formulario?'))document.getElementById('frmDespacho').reset()">🧹 Limpiar</button>
+        <button type="submit" class="btn btn-danger" id="btnGuardar">💾 Registrar Despacho</button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+AUTH.require();
+document.getElementById('sidebarContainer').innerHTML = renderSidebar('produccion');
+
+const params=new URLSearchParams(window.location.search);
+const editId=params.get('id')?parseInt(params.get('id')):null;
+const preCodig=params.get('codigo')||'';
+
+document.getElementById('topbarContainer').innerHTML = renderTopbar(
+  editId ? 'Editar Despacho #'+editId : 'Nuevo Despacho de Mezcla',
+  'Planta Achachicala — EMAVÍAS'
+);
+if(editId) document.getElementById('pageTitle').textContent='✏️ Editar Despacho #'+editId;
+
+// Llenar datalists con valores existentes
+function llenarSugerencias(){
+  const d=DB.get('despachos');
+  const vqs=[...new Set(d.map(x=>x.volqueta).filter(Boolean))];
+  const conds=[...new Set(d.map(x=>x.conductor).filter(Boolean))];
+  const obras=[...new Set(d.map(x=>x.codigoObra).filter(Boolean))];
+  const resps=[...new Set(d.map(x=>x.responsable).filter(Boolean))];
+  document.getElementById('lista-volquetas').innerHTML=vqs.map(v=>`<option value="${escHtml(v)}">`).join('');
+  document.getElementById('lista-conductores').innerHTML=conds.map(c=>`<option value="${escHtml(c)}">`).join('');
+  document.getElementById('lista-obras').innerHTML=obras.map(o=>`<option value="${escHtml(o)}">`).join('');
+  document.getElementById('lista-responsables').innerHTML=resps.map(r=>`<option value="${escHtml(r)}">`).join('');
+}
+llenarSugerencias();
+
+// Precargar si editando
+if(editId){
+  const rec=DB.get('despachos').find(x=>x.id===editId);
+  if(rec){
+    document.getElementById('f_fecha').value=rec.fecha||'';
+    document.getElementById('f_hora').value=rec.hora||'';
+    document.getElementById('f_nBoleta').value=rec.nBoleta||'';
+    document.getElementById('f_volqueta').value=rec.volqueta||'';
+    document.getElementById('f_conductor').value=rec.conductor||'';
+    document.getElementById('f_volM3').value=rec.volM3||'';
+    document.getElementById('f_tipoMezcla').value=rec.tipoMezcla||'';
+    document.getElementById('f_temperatura').value=rec.temperatura||160;
+    document.getElementById('f_planta').value=rec.planta||'Ciber';
+    document.getElementById('f_responsable').value=rec.responsable||'';
+    document.getElementById('f_codigoObra').value=rec.codigoObra||'';
+    document.getElementById('f_destino').value=rec.destino||'';
+    document.getElementById('btnGuardar').textContent='💾 Actualizar';
+  }
+} else {
+  document.getElementById('f_fecha').value=today();
+  if(preCodig) document.getElementById('f_codigoObra').value=preCodig;
+}
+
+function guardar(e){
+  e.preventDefault();
+  const btn=document.getElementById('btnGuardar');
+  btn.disabled=true; btn.textContent='Guardando...';
+
+  const rec={
+    id: editId || DB.nextId('despachos'),
+    fecha: document.getElementById('f_fecha').value,
+    hora:  document.getElementById('f_hora').value,
+    nBoleta: document.getElementById('f_nBoleta').value.trim(),
+    volqueta: document.getElementById('f_volqueta').value.trim(),
+    conductor: document.getElementById('f_conductor').value.trim(),
+    volM3: parseFloat(document.getElementById('f_volM3').value)||0,
+    tipoMezcla: document.getElementById('f_tipoMezcla').value,
+    temperatura: parseInt(document.getElementById('f_temperatura').value)||160,
+    planta: document.getElementById('f_planta').value,
+    responsable: document.getElementById('f_responsable').value.trim(),
+    codigoObra: document.getElementById('f_codigoObra').value.trim().toUpperCase(),
+    destino: document.getElementById('f_destino').value.trim()
+  };
+
+  if(!rec.volqueta||!rec.conductor||!rec.volM3||!rec.tipoMezcla){
+    toast('Complete los campos requeridos (*)','error');
+    btn.disabled=false; btn.textContent=editId?'💾 Actualizar':'💾 Registrar Despacho';
+    return;
+  }
+
+  let data=DB.get('despachos');
+  if(editId){ data=data.map(x=>x.id===editId?rec:x); }
+  else { data.push(rec); }
+  DB.set('despachos',data);
+
+  toast(editId?'Despacho actualizado':'Despacho registrado #'+rec.id,'success');
+  setTimeout(()=>window.location.href='despachos-prod.html',900);
+}
+</script>
+</body>
+</html>

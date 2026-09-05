@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMAVIAS - Despachos de Mezcla Asfáltica</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="sidebarContainer"></div>
+<div class="main-content">
+  <div id="topbarContainer"></div>
+  <div class="page-content">
+
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb"><span>EMAVIAS</span><span class="breadcrumb-sep">›</span><span>Producción</span><span class="breadcrumb-sep">›</span><span>Despachos</span></div>
+        <div class="page-title">📋 Despachos de Mezcla Asfáltica</div>
+        <div class="page-subtitle">Registro individual de despachos — Planta Achachicala</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-outline btn-sm" onclick="triggerImport()">📥 Importar CSV</button>
+        <button class="btn btn-success btn-sm" onclick="doExport()">📗 Exportar Excel</button>
+        <a href="produccion.html" class="btn btn-secondary btn-sm">← Volver</a>
+        <a href="form-despacho.html" class="btn btn-primary btn-sm">➕ Nuevo Despacho</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="filters-bar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Buscar código EMA, conductor, destino..." oninput="renderTable()">
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Año:</span>
+          <select id="filtAnio" class="filter-control" onchange="renderTable()">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Mes:</span>
+          <select id="filtMes" class="filter-control" onchange="renderTable()">
+            <option value="">Todos</option>
+            <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+            <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+            <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+            <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Mezcla:</span>
+          <select id="filtTipo" class="filter-control" onchange="renderTable()">
+            <option value="">Todos</option>
+            <option value="Bacheo">Bacheo</option>
+            <option value="Carpeta">Carpeta Asfáltica</option>
+          </select>
+        </div>
+        <div class="spacer"></div>
+        <span id="countBadge" class="badge badge-secondary"></span>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead><tr>
+            <th>Fecha</th>
+            <th>N° Boleta</th>
+            <th>Cód. EMA</th>
+            <th>Volqueta</th>
+            <th>Conductor</th>
+            <th style="text-align:right;">m³</th>
+            <th>Tipo Mezcla</th>
+            <th>Destino</th>
+            <th>Responsable</th>
+            <th>Acciones</th>
+          </tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="paginationBar"></div>
+    </div>
+
+    <div id="totalesBar" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:16px;"></div>
+  </div>
+</div>
+
+<input type="file" id="fileImport" accept=".csv" style="display:none" onchange="handleImport(this)">
+
+<!-- Modal eliminar -->
+<div id="modalConfirm" style="display:none;" class="modal-overlay">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header"><span class="modal-title">Confirmar eliminación</span><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body"><p id="modalMsg">¿Eliminar este despacho?</p></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+AUTH.require();
+document.getElementById('sidebarContainer').innerHTML = renderSidebar('produccion');
+document.getElementById('topbarContainer').innerHTML = renderTopbar('Despachos de Mezcla Asfáltica','Planta Achachicala — EMAVÍAS');
+
+const COLS = [
+  {key:'id',label:'ID'},{key:'fecha',label:'Fecha'},{key:'hora',label:'Hora'},
+  {key:'nBoleta',label:'N° Boleta'},{key:'volqueta',label:'Volqueta'},
+  {key:'conductor',label:'Conductor'},{key:'volM3',label:'Volumen m³'},
+  {key:'tipoMezcla',label:'Tipo Mezcla'},{key:'temperatura',label:'Temperatura °C'},
+  {key:'planta',label:'Planta'},{key:'responsable',label:'Responsable'},
+  {key:'codigoObra',label:'Código EMA'},{key:'destino',label:'Destino'}
+];
+
+// Leer parámetro URL ?codigo=EMA-XX
+const urlParams = new URLSearchParams(window.location.search);
+const codigoParam = urlParams.get('codigo') || '';
+
+// Poblar filtro año
+const todos = DB.get('despachos');
+const anios = [...new Set(todos.map(x=>(x.fecha||'').slice(0,4)).filter(Boolean))].sort().reverse();
+const selA = document.getElementById('filtAnio');
+anios.forEach(a=>{ const op=document.createElement('option'); op.value=a; op.textContent=a; selA.appendChild(op); });
+
+// Pre-llenar búsqueda si viene con código
+if(codigoParam) document.getElementById('searchInput').value = codigoParam;
+
+let deleteId = null;
+let currentPage = 1;
+const perPage = 15;
+
+function getData() {
+  let data = DB.get('despachos');
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const fa = document.getElementById('filtAnio').value;
+  const fm = document.getElementById('filtMes').value;
+  const ft = document.getElementById('filtTipo').value;
+  if(q) data = data.filter(x=>
+    (x.codigoObra||'').toLowerCase().includes(q) ||
+    (x.conductor||'').toLowerCase().includes(q) ||
+    (x.destino||'').toLowerCase().includes(q) ||
+    (x.nBoleta||'').toLowerCase().includes(q) ||
+    (x.responsable||'').toLowerCase().includes(q)
+  );
+  if(fa) data = data.filter(x=>(x.fecha||'').startsWith(fa));
+  if(fm) data = data.filter(x=>(x.fecha||'').slice(5,7)===fm);
+  if(ft) data = data.filter(x=>x.tipoMezcla===ft);
+  return data.sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+}
+
+function renderTable() {
+  const data = getData();
+  const total = data.length;
+  const pages = Math.max(1, Math.ceil(total/perPage));
+  if(currentPage > pages) currentPage = 1;
+  const slice = data.slice((currentPage-1)*perPage, currentPage*perPage);
+  document.getElementById('countBadge').textContent = `${total} despachos`;
+
+  document.getElementById('tableBody').innerHTML = slice.length ? slice.map(d => {
+    const tipoBadge = d.tipoMezcla === 'Bacheo'
+      ? `<span class="badge" style="background:#FFFDE7;color:#B8860B;border:1px solid #B8860B;">Bacheo</span>`
+      : `<span class="badge" style="background:#D6E4F7;color:#1a4ea0;border:1px solid #1a4ea0;">Carpeta</span>`;
+    return `<tr>
+      <td><strong>${formatDate(d.fecha||'')}</strong><br><small style="color:#888;">${d.hora||''}</small></td>
+      <td style="font-size:12px;">${escHtml(d.nBoleta||'—')}</td>
+      <td><strong style="color:#8B1A1A;">${escHtml(d.codigoObra||'—')}</strong></td>
+      <td style="font-size:12px;">${escHtml(d.volqueta||'—')}</td>
+      <td style="font-size:12px;">${escHtml(d.conductor||'—')}</td>
+      <td style="text-align:right;"><strong>${formatNumber(d.volM3,1)}</strong></td>
+      <td>${tipoBadge}</td>
+      <td style="font-size:11px;max-width:140px;">${escHtml(d.destino||'—')}</td>
+      <td style="font-size:11px;">${escHtml(d.responsable||'—')}</td>
+      <td><div class="table-actions">
+        <a href="form-despacho.html?id=${d.id}" class="btn btn-info btn-sm btn-icon" title="Editar">✏️</a>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="askDelete(${d.id},'${escHtml(d.codigoObra||'')} - ${escHtml(d.fecha||'')}')" title="Eliminar">🗑️</button>
+      </div></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Sin despachos</div><div class="empty-desc">No se encontraron despachos con los filtros aplicados</div></div></td></tr>`;
+
+  // Paginación
+  let pg = '';
+  if(pages > 1) {
+    if(currentPage>1) pg+=`<button class="page-btn" onclick="goPage(${currentPage-1})">‹</button>`;
+    for(let i=1;i<=pages;i++) pg+=`<button class="page-btn${i===currentPage?' active':''}" onclick="goPage(${i})">${i}</button>`;
+    if(currentPage<pages) pg+=`<button class="page-btn" onclick="goPage(${currentPage+1})">›</button>`;
+  }
+  pg += `<span class="page-info">${Math.min((currentPage-1)*perPage+1,total)}-${Math.min(currentPage*perPage,total)} de ${total}</span>`;
+  document.getElementById('paginationBar').innerHTML = pg;
+
+  // Totales
+  const totalVol = data.reduce((s,x)=>s+(Number(x.volM3)||0),0);
+  const totalBach = data.filter(x=>x.tipoMezcla==='Bacheo').reduce((s,x)=>s+(Number(x.volM3)||0),0);
+  const totalCarp = data.filter(x=>x.tipoMezcla==='Carpeta').reduce((s,x)=>s+(Number(x.volM3)||0),0);
+  const emas = new Set(data.map(x=>x.codigoObra).filter(Boolean)).size;
+  document.getElementById('totalesBar').innerHTML = `
+    <div class="stat-card"><div class="stat-icon blue">📋</div><div><div class="stat-value">${total}</div><div class="stat-label">Total Despachos</div></div></div>
+    <div class="stat-card"><div class="stat-icon red">🏭</div><div><div class="stat-value">${formatNumber(totalVol,1)}</div><div class="stat-label">m³ Total</div></div></div>
+    <div class="stat-card"><div class="stat-icon orange">🔷</div><div><div class="stat-value">${formatNumber(totalBach,1)}</div><div class="stat-label">m³ Bacheo</div></div></div>
+    <div class="stat-card"><div class="stat-icon blue">🟠</div><div><div class="stat-value">${formatNumber(totalCarp,1)}</div><div class="stat-label">m³ Carpeta</div></div></div>
+    <div class="stat-card"><div class="stat-icon green">🏗️</div><div><div class="stat-value">${emas}</div><div class="stat-label">Obras EMA</div></div></div>`;
+}
+
+function goPage(p) { currentPage=p; renderTable(); }
+
+function askDelete(id, label) {
+  deleteId = id;
+  document.getElementById('modalMsg').textContent = `¿Eliminar el despacho "${label}"? Esta acción no se puede deshacer.`;
+  document.getElementById('modalConfirm').style.display='flex';
+}
+function closeModal() { document.getElementById('modalConfirm').style.display='none'; deleteId=null; }
+function confirmDelete() {
+  if(!deleteId){ closeModal(); return; }
+  let desp = DB.get('despachos');
+  desp = desp.filter(x=>x.id !== deleteId);
+  DB.set('despachos', desp);
+  closeModal(); renderTable();
+  toast('Despacho eliminado','success');
+}
+function doExport(){exportXLSX(getData(),'Despachos de Producción','DespachosProd_'+new Date().toISOString().slice(0,10)+'.xlsx',COLS);}
+function triggerImport() { document.getElementById('fileImport').click(); }
+function handleImport(inp) {
+  importCSV(inp.files[0], COLS, function(records){
+    const existing = DB.get('despachos');
+    const maxId = existing.reduce((m,x)=>Math.max(m,x.id||0),0);
+    records.forEach((r,i)=>{
+      r.id = maxId+i+1;
+      if(r.volM3) r.volM3=parseFloat(r.volM3)||0;
+      if(r.temperatura) r.temperatura=parseFloat(r.temperatura)||160;
+    });
+    DB.set('despachos', [...existing, ...records]);
+    renderTable();
+    toast(`${records.length} despachos importados`,'success');
+  });
+  inp.value='';
+}
+
+renderTable();
+</script>
+</body>
+</html>

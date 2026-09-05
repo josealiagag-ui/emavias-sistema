@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EMAVIAS — Horas Extra</title>
+<link rel="stylesheet" href="css/styles.css">
+<script src="js/xlsx-js-style.min.js"></script>
+<style>
+/* ===== YEAR CARDS ===== */
+.years-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;margin-top:4px;}
+.year-card{background:#fff;border-radius:12px;border:1.5px solid #e8dada;padding:0;overflow:hidden;transition:transform .15s,box-shadow .15s,border-color .15s;}
+.year-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(139,26,26,.18);border-color:#8B1A1A;}
+.year-card-header{background:linear-gradient(135deg,#8B1A1A,#5a1010);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px;}
+.yc-icon{font-size:2rem;}
+.yc-title{font-weight:800;font-size:1.15rem;letter-spacing:.5px;}
+.yc-sub{font-size:.75rem;opacity:.78;margin-top:3px;}
+.year-card-body{padding:16px 20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.yc-stat{text-align:center;padding:10px 4px;background:#fdf5f5;border-radius:8px;}
+.yc-stat-val{font-size:1.25rem;font-weight:800;color:#8B1A1A;}
+.yc-stat-lbl{font-size:.67rem;color:#777;text-transform:uppercase;letter-spacing:.3px;margin-top:2px;}
+.yc-stat.blue .yc-stat-val{color:#003580;}
+.yc-stat.green .yc-stat-val{color:#1a6b1a;}
+.yc-stat.orange .yc-stat-val{color:#b85c00;}
+.yc-stat.purple .yc-stat-val{color:#6a1b9a;}
+.year-card-footer{padding:10px 18px;background:#fdf5f5;border-top:1px solid #f0e0e0;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.yc-badge{font-size:.75rem;color:#8B1A1A;font-weight:700;background:#f5e0e0;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+.yc-actions{display:flex;gap:6px;}
+.import-card{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 20px;cursor:pointer;border:2.5px dashed #ccc !important;box-shadow:none !important;background:#fafafa;transition:border-color .2s,background .2s;}
+.import-card:hover{border-color:#8B1A1A !important;background:#fdf5f5;}
+.import-card-icon{font-size:2.8rem;margin-bottom:10px;color:#bbb;transition:color .2s;}
+.import-card:hover .import-card-icon{color:#8B1A1A;}
+.import-card-title{font-size:.95rem;font-weight:700;color:#999;transition:color .2s;}
+.import-card:hover .import-card-title{color:#8B1A1A;}
+.import-card-sub{font-size:.78rem;color:#bbb;margin-top:5px;transition:color .2s;}
+.import-card:hover .import-card-sub{color:#a04040;}
+/* ===== PERIOD CARDS ===== */
+.periodos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;margin-top:4px;}
+.periodo-card{background:#fff;border-radius:12px;border:1.5px solid #e8dada;padding:0;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s;}
+.periodo-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(139,26,26,.18);border-color:#8B1A1A;}
+.periodo-card-header{background:linear-gradient(135deg,#8B1A1A,#6B1414);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px;}
+.pc-icon{font-size:1.6rem;}
+.pc-title{font-weight:700;font-size:.92rem;line-height:1.3;}
+.pc-sub{font-size:.72rem;opacity:.75;margin-top:2px;}
+.periodo-card-body{padding:14px 18px;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.pc-stat{text-align:center;padding:8px 4px;background:#fdf5f5;border-radius:8px;}
+.pc-stat-val{font-size:1.2rem;font-weight:800;color:#8B1A1A;}
+.pc-stat-lbl{font-size:.68rem;color:#777;text-transform:uppercase;letter-spacing:.3px;margin-top:1px;}
+.pc-stat.blue .pc-stat-val{color:#003580;}
+.pc-stat.green .pc-stat-val{color:#1a6b1a;}
+.pc-stat.orange .pc-stat-val{color:#b85c00;}
+.periodo-card-footer{padding:10px 18px;background:#fdf5f5;border-top:1px solid #f0e0e0;display:flex;align-items:center;justify-content:space-between;}
+.pc-footer-badge{font-size:.75rem;color:#8B1A1A;font-weight:700;background:#f5e0e0;padding:3px 10px;border-radius:20px;}
+.pc-footer-arrow{color:#8B1A1A;font-size:1rem;font-weight:700;}
+/* ===== BACK BUTTONS / DETALLE ===== */
+.detalle-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.btn-back{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #8B1A1A;color:#8B1A1A;padding:7px 16px;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer;transition:background .15s,color .15s;}
+.btn-back:hover{background:#8B1A1A;color:#fff;}
+.detalle-periodo-label{font-size:1rem;font-weight:700;color:#8B1A1A;}
+.year-nav-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.year-nav-left{display:flex;align-items:center;gap:10px;}
+.year-nav-title{font-size:1rem;font-weight:700;color:#333;}
+.year-nav-sub{font-size:.8rem;color:#888;margin-top:2px;}
+</style>
+</head>
+<body>
+<div id="sidebarContainer"></div>
+<div class="main-content">
+  <div id="topbarContainer"></div>
+  <div class="page-content">
+
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb"><span>EMAVIAS</span><span class="breadcrumb-sep">›</span><span>Personal</span><span class="breadcrumb-sep">›</span><span>Horas Extra</span></div>
+        <div class="page-title">⏱️ Registro de Horas Extra</div>
+        <div class="page-subtitle">Personal Operativo — Cierre mensual del 21 al 20</div>
+      </div>
+      <div class="page-actions">
+        <a href="feriados.html" class="btn btn-outline btn-sm">📅 Feriados</a>
+        <button class="btn btn-outline btn-sm" onclick="triggerImport()">📥 Importar Excel</button>
+        <input type="file" id="fileImport" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImport(this)">
+        <button class="btn btn-success btn-sm" onclick="doExport()">📗 Exportar Excel</button>
+        <a href="form-horas-extra.html" class="btn btn-primary btn-sm">➕ Nuevo Registro</a>
+      </div>
+    </div>
+
+    <!-- Stats Banner -->
+    <div class="stats-grid" style="margin-bottom:16px;">
+      <div class="stat-card">
+        <div class="stat-icon blue">📅</div>
+        <div><div class="stat-value" id="bannerPeriodo" style="font-size:14px;line-height:1.2;">—</div><div class="stat-label">Período</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red">⏱️</div>
+        <div><div class="stat-value" id="bannerTotal">0</div><div class="stat-label">Total Final Acum.</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">🌅</div>
+        <div><div class="stat-value" id="bannerLV">0</div><div class="stat-label">Horas L/V</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">📆</div>
+        <div><div class="stat-value" id="bannerSD">0</div><div class="stat-label">Horas S/D/F ×2</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">🌙</div>
+        <div><div class="stat-value" id="bannerNoc">0</div><div class="stat-label">Horas Nocturnas ×1.5</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon teal">👥</div>
+        <div><div class="stat-value" id="bannerTrab">0</div><div class="stat-label">Trabajadores</div></div>
+      </div>
+    </div>
+
+    <!-- VISTA 0: GRID DE AÑOS -->
+    <div id="viewYears">
+      <div class="card" style="padding:20px 24px 24px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div>
+            <div style="font-size:1.05rem;font-weight:700;color:#333;">🗓️ Años con Registros</div>
+            <div style="font-size:.8rem;color:#888;margin-top:2px;">Seleccione un año para ver sus períodos de corte</div>
+          </div>
+          <span id="totalAnosBadge" class="badge badge-secondary"></span>
+        </div>
+        <div id="yearsGrid" class="years-grid"></div>
+      </div>
+    </div>
+
+    <!-- VISTA 1: GRID DE PERIODOS -->
+    <div id="viewPeriodos" style="display:none;">
+      <div class="card" style="padding:20px 24px 24px;">
+        <div class="year-nav-header">
+          <div class="year-nav-left">
+            <button class="btn-back" onclick="volverAAnios()">← Volver a Años</button>
+            <div>
+              <div class="year-nav-title" id="periodosYearTitle">Períodos de Corte</div>
+              <div class="year-nav-sub">Seleccione un período para ver sus registros</div>
+            </div>
+          </div>
+          <span id="totalPeriodosBadge" class="badge badge-secondary"></span>
+        </div>
+        <div id="periodosGrid" class="periodos-grid"></div>
+      </div>
+    </div>
+
+    <!-- VISTA 2: DETALLE -->
+    <div id="viewDetalle" style="display:none;">
+      <div class="detalle-header">
+        <button class="btn-back" onclick="volverAPeriodos()">← Volver a Períodos</button>
+        <span class="detalle-periodo-label" id="detallePeriodoLabel"></span>
+      </div>
+      <div class="card">
+        <div class="filters-bar">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Nombre, CI, grupo, trabajo..." oninput="renderTable()">
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">Grupo:</span>
+            <select id="filtGrupo" class="filter-control" onchange="renderTable()">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">Tipo:</span>
+            <select id="filtTipo" class="filter-control" onchange="renderTable()">
+              <option value="">Todos</option>
+              <option value="C">C — Compensación</option>
+              <option value="X">X — Extra pagado</option>
+            </select>
+          </div>
+          <div class="spacer"></div>
+          <span id="countBadge" class="badge badge-secondary"></span>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th><th>C.I.</th><th>Apellido y Nombre</th><th>Grupo</th>
+                <th>Trabajo Realizado</th><th>Tipo</th><th>Permanencia</th>
+                <th>Hr. Inicio</th><th>Hr. Fin</th><th>Total Hrs</th>
+                <th title="Lunes a Viernes">L/V</th>
+                <th title="Sábado/Domingo/Feriado (×2)">S/D/F</th>
+                <th title="Nocturnas 20:00–6:00 (×1.5)">Noct.</th>
+                <th>Total Final</th><th>Vence</th><th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+            <tfoot id="tableFooter"></tfoot>
+          </table>
+        </div>
+        <div class="pagination" id="paginationBar"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal Reporte -->
+<div id="modalReporte" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1100;align-items:center;justify-content:center" onclick="if(event.target===this)closeReporte()">
+  <div style="background:#fff;border-radius:12px;width:min(820px,96vw);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.35)">
+    <div style="background:linear-gradient(135deg,#8B1A1A,#6B1414);color:#fff;padding:14px 20px;border-radius:12px 12px 0 0;display:flex;align-items:center;gap:12px">
+      <span style="font-size:1.4rem">📋</span>
+      <div><div style="font-weight:700;font-size:1rem" id="rptNombre">Reporte</div><div style="font-size:.78rem;opacity:.85" id="rptSub"></div></div>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button onclick="printReporte()" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:600">🖨️ Imprimir</button>
+        <button onclick="closeReporte()" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;line-height:1">×</button>
+      </div>
+    </div>
+    <div id="rptBody" style="overflow-y:auto;padding:20px;flex:1"></div>
+  </div>
+</div>
+<style>@media print{body>*:not(#__printArea){display:none!important}#__printArea{display:block!important;position:static!important;width:100%!important}}</style>
+
+<!-- Modal Confirmar Eliminación -->
+<div id="modalDeleteYear" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1100;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:12px;width:min(440px,94vw);box-shadow:0 20px 60px rgba(0,0,0,.35)">
+    <div style="background:linear-gradient(135deg,#8B1A1A,#6B1414);color:#fff;padding:14px 20px;border-radius:12px 12px 0 0;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:1.3rem">⚠️</span>
+      <span style="font-weight:700;font-size:1rem;">Confirmar eliminación</span>
+      <button onclick="closeDeleteYear()" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;line-height:1;margin-left:auto;">×</button>
+    </div>
+    <div style="padding:20px 24px;">
+      <p id="deleteYearMsg" style="margin:0 0 20px;color:#333;line-height:1.5;"></p>
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <button class="btn btn-outline" onclick="closeDeleteYear()">Cancelar</button>
+        <button class="btn btn-danger" onclick="confirmDeleteYear()">🗑️ Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+AUTH.require();
+document.getElementById('sidebarContainer').innerHTML = renderSidebar('horas-extra');
+document.getElementById('topbarContainer').innerHTML = renderTopbar('Horas Extra','Registro mensual del personal operativo');
+
+// ===== ESTADO =====
+let currentYearFilter  = null; // null = vista años, "YYYY" = vista períodos de ese año
+let currentPeriodoKey  = null; // null = vista periodos, "YYYY-MM" = vista detalle
+let currentPage = 1;
+const perPage = 15;
+let pendingDeleteYear  = null; // año a eliminar
+
+const MESES_LARGO = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MESES_CORTO = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+// ===== PERÍODO AUTOMÁTICO DESDE FECHA =====
+function getPeriodoKey(fecha) {
+  if (!fecha) return null;
+  const parts = fecha.split('-');
+  if (parts.length < 3) return null;
+  const yyyy = parseInt(parts[0], 10);
+  const mm   = parseInt(parts[1], 10);
+  const dd   = parseInt(parts[2], 10);
+  if (!yyyy || !mm || !dd) return null;
+  let startYear, startMonth;
+  if (dd >= 21) {
+    startYear  = yyyy;
+    startMonth = mm;
+  } else {
+    if (mm === 1) { startYear = yyyy - 1; startMonth = 12; }
+    else           { startYear = yyyy;     startMonth = mm - 1; }
+  }
+  return startYear + '-' + String(startMonth).padStart(2, '0');
+}
+
+function keyToLabel(key) {
+  if (!key) return '—';
+  const [y, m] = key.split('-').map(Number);
+  const endM = m === 12 ? 1  : m + 1;
+  const endY = m === 12 ? y + 1 : y;
+  return `Horas Extra del 21 de ${MESES_LARGO[m]} al 20 de ${MESES_LARGO[endM]} ${endY}`;
+}
+function keyToLabelCorto(key) {
+  if (!key) return '—';
+  const [y, m] = key.split('-').map(Number);
+  const endM = m === 12 ? 1  : m + 1;
+  const endY = m === 12 ? y + 1 : y;
+  return `21 ${MESES_CORTO[m]} — 20 ${MESES_CORTO[endM]} ${endY}`;
+}
+
+// ===== HELPERS =====
+function calcStats(recs) {
+  let lv=0,sd=0,noc=0,total=0;
+  recs.forEach(h=>{ const r=recalcRec(h); lv+=r.lv; sd+=r.sd; noc+=r.nocturno; total+=r.totalFinal; });
+  return {
+    trab  : [...new Set(recs.map(h => h.ci).filter(Boolean))].length,
+    lv, sd, noc, total,
+    count : recs.length
+  };
+}
+
+function ensureIds() {
+  let data = DB.get('horas_extra'), changed = false;
+  const maxId = data.reduce((m,h) => Math.max(m, Number(h.id)||0), 0);
+  let next = maxId + 1;
+  data.forEach(h => { if (!h.id) { h.id = next++; changed = true; } });
+  if (changed) DB.set('horas_extra', data);
+}
+function daysDiff(a,b) { return Math.ceil((new Date(b) - new Date(a)) / 86400000); }
+
+// ===== RECÁLCULO ON-THE-FLY =====
+function toMin2(t){ if(!t||!t.includes(':'))return null; const [h,m]=t.split(':').map(Number); return h*60+m; }
+
+function recalcRec(h){
+  const hi=toMin2(h.horaSalida), hfr=toMin2(h.horaExtra);
+  if(hi===null||hfr===null||!h.fecha){
+    return {totalHoras:Number(h.totalHoras)||0,lv:Number(h.lv)||0,sd:Number(h.sd)||0,nocturno:Number(h.nocturno)||0,totalFinal:Number(h.totalFinal)||0};
+  }
+  let endMin=hfr; if(endMin<=hi) endMin+=24*60;
+  const totalMin=endMin-hi, totalHoras=+(totalMin/60).toFixed(2);
+  const N1=20*60, N2=30*60;
+  const nStart=Math.max(hi,N1), nEnd=Math.min(endMin,N2);
+  const nightMin=nStart<nEnd?nEnd-nStart:0, dayMin=totalMin-nightMin;
+  const feriados=DB.get('feriados').map(f=>f.fecha);
+  const dow=new Date(h.fecha+'T12:00:00').getDay();
+  const esSD=dow===0||dow===6||feriados.includes(h.fecha);
+  const nocturno=+(nightMin/60).toFixed(2);
+  let lv=0,sd=0,totalFinal=0;
+  if(esSD){ sd=+(dayMin/60).toFixed(2); totalFinal=+(dayMin/60*2+nightMin/60*3).toFixed(2); }
+  else    { lv=+(dayMin/60).toFixed(2); totalFinal=+(dayMin/60+nightMin/60*1.5).toFixed(2); }
+  return {totalHoras,lv,sd,nocturno,totalFinal};
+}
+
+function migrateData(){
+  let data=DB.get('horas_extra'), changed=false;
+  data=data.map(h=>{
+    if(!h.horaSalida||!h.horaExtra||!h.fecha) return h;
+    const r=recalcRec(h);
+    if(h.lv!==r.lv||h.sd!==r.sd||h.nocturno!==r.nocturno||h.totalFinal!==r.totalFinal){ changed=true; return {...h,...r}; }
+    return h;
+  });
+  if(changed) DB.set('horas_extra',data);
+}
+
+// ===== BANNER =====
+function updateBanner(recs, label) {
+  const s = calcStats(recs);
+  document.getElementById('bannerPeriodo').textContent = label || '—';
+  document.getElementById('bannerTotal').textContent   = formatNumber(s.total, 1);
+  document.getElementById('bannerLV').textContent      = formatNumber(s.lv, 1);
+  document.getElementById('bannerSD').textContent      = formatNumber(s.sd, 1);
+  document.getElementById('bannerNoc').textContent     = formatNumber(s.noc, 1);
+  document.getElementById('bannerTrab').textContent    = s.trab;
+}
+
+// ===== AGRUPACIÓN POR AÑO (desde período key) =====
+function getYearGroups() {
+  const all = DB.get('horas_extra');
+  // Construir map de periodos
+  const periodoMap = {};
+  all.forEach(h => {
+    const key = getPeriodoKey(h.fecha);
+    if (!key) return;
+    if (!periodoMap[key]) periodoMap[key] = [];
+    periodoMap[key].push(h);
+  });
+  // Agrupar periodos por año (YYYY prefix del period key)
+  const yearMap = {};
+  Object.keys(periodoMap).forEach(key => {
+    const yr = key.split('-')[0]; // "YYYY"
+    if (!yearMap[yr]) yearMap[yr] = { periodos: [], recs: [] };
+    yearMap[yr].periodos.push(key);
+    yearMap[yr].recs = yearMap[yr].recs.concat(periodoMap[key]);
+  });
+  return Object.entries(yearMap).sort((a,b) => b[0].localeCompare(a[0]));
+}
+
+// ===== VISTA 0: AÑOS =====
+function renderYearCards() {
+  const yearGroups = getYearGroups();
+  const all = DB.get('horas_extra');
+
+  document.getElementById('totalAnosBadge').textContent =
+    yearGroups.length + ' año' + (yearGroups.length !== 1 ? 's' : '');
+
+  updateBanner(all, yearGroups.length > 0
+    ? yearGroups.length + ' año' + (yearGroups.length !== 1 ? 's' : '') + ' · General'
+    : 'General');
+
+  const grid = document.getElementById('yearsGrid');
+
+  const importCardHtml = `<div class="year-card import-card" onclick="triggerImport()" title="Importar registros">
+    <div class="import-card-icon">📥</div>
+    <div class="import-card-title">Importar nuevos registros</div>
+    <div class="import-card-sub">Haga clic para cargar un Excel o CSV</div>
+  </div>`;
+
+  if (!yearGroups.length) {
+    grid.innerHTML = importCardHtml;
+    return;
+  }
+
+  grid.innerHTML = yearGroups.map(([yr, data]) => {
+    const s = calcStats(data.recs);
+    const nPeriodos = data.periodos.length;
+    const encYr = encodeURIComponent(yr);
+    return `<div class="year-card">
+      <div class="year-card-header" style="cursor:pointer;" onclick="showYearPeriods('${yr}')">
+        <div class="yc-icon">📆</div>
+        <div>
+          <div class="yc-title">Año ${yr}</div>
+          <div class="yc-sub">${nPeriodos} período${nPeriodos!==1?'s':''} · ${s.count} registros</div>
+        </div>
+      </div>
+      <div class="year-card-body" onclick="showYearPeriods('${yr}')" style="cursor:pointer;">
+        <div class="yc-stat">
+          <div class="yc-stat-val">${formatNumber(s.total,1)}</div>
+          <div class="yc-stat-lbl">Total Horas</div>
+        </div>
+        <div class="yc-stat blue">
+          <div class="yc-stat-val">${s.trab}</div>
+          <div class="yc-stat-lbl">Trabajadores</div>
+        </div>
+        <div class="yc-stat green">
+          <div class="yc-stat-val">${formatNumber(s.lv,1)}</div>
+          <div class="yc-stat-lbl">Horas L/V</div>
+        </div>
+        <div class="yc-stat orange">
+          <div class="yc-stat-val">${formatNumber(s.sd,1)}</div>
+          <div class="yc-stat-lbl">S/D/F ×2</div>
+        </div>
+        <div class="yc-stat purple">
+          <div class="yc-stat-val">${formatNumber(s.noc,1)}</div>
+          <div class="yc-stat-lbl">Nocturnas</div>
+        </div>
+        <div class="yc-stat">
+          <div class="yc-stat-val">${nPeriodos}</div>
+          <div class="yc-stat-lbl">Períodos</div>
+        </div>
+      </div>
+      <div class="year-card-footer">
+        <span class="yc-badge">${s.count} registros</span>
+        <div class="yc-actions">
+          <button class="btn btn-success btn-sm" onclick="event.stopPropagation();doExportYear('${yr}')" title="Exportar año">📗 Exportar</button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();askDeleteYear('${yr}')" title="Eliminar todo el año">🗑️ Eliminar</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('') + importCardHtml;
+}
+
+function showYearPeriods(yr) {
+  currentYearFilter = yr;
+  document.getElementById('viewYears').style.display    = 'none';
+  document.getElementById('viewPeriodos').style.display = '';
+  document.getElementById('viewDetalle').style.display  = 'none';
+  document.getElementById('periodosYearTitle').textContent = '📋 Períodos de Corte — Año ' + yr;
+  renderPeriodCards();
+}
+
+function volverAAnios() {
+  currentYearFilter  = null;
+  currentPeriodoKey  = null;
+  document.getElementById('viewDetalle').style.display  = 'none';
+  document.getElementById('viewPeriodos').style.display = 'none';
+  document.getElementById('viewYears').style.display    = '';
+  renderYearCards();
+}
+
+// ===== ELIMINAR AÑO =====
+function askDeleteYear(yr) {
+  pendingDeleteYear = yr;
+  const yearGroups = getYearGroups();
+  const yg = yearGroups.find(([y]) => y === yr);
+  const count = yg ? yg[1].recs.length : 0;
+  document.getElementById('deleteYearMsg').textContent =
+    `¿Eliminar TODOS los registros del año ${yr}? (${count} registros en total)\n\nEsta acción no se puede deshacer.`;
+  document.getElementById('modalDeleteYear').style.display = 'flex';
+}
+function closeDeleteYear() {
+  document.getElementById('modalDeleteYear').style.display = 'none';
+  pendingDeleteYear = null;
+}
+function confirmDeleteYear() {
+  if (!pendingDeleteYear) { closeDeleteYear(); return; }
+  const yr = pendingDeleteYear;
+  let data = DB.get('horas_extra');
+  const before = data.length;
+  // Eliminar todos los registros cuyo período key empieza con ese año
+  data = data.filter(h => {
+    const key = getPeriodoKey(h.fecha);
+    return !key || key.split('-')[0] !== yr;
+  });
+  DB.set('horas_extra', data);
+  closeDeleteYear();
+  if (data.length < before) toast('Registros del año ' + yr + ' eliminados', 'success');
+  else toast('No se encontraron registros para eliminar', 'warning');
+  renderYearCards();
+}
+
+// ===== EXPORTAR AÑO =====
+function doExportYear(yr) {
+  const all = DB.get('horas_extra');
+  const data = all.filter(h => {
+    const key = getPeriodoKey(h.fecha);
+    return key && key.split('-')[0] === yr;
+  });
+  if (!data.length) { toast('No hay datos para el año ' + yr, 'info'); return; }
+  exportarExcel(data, 'Año ' + yr, yr);
+}
+
+// ===== VISTA 1: PERIODOS (filtrado por año) =====
+function renderPeriodCards() {
+  const all = DB.get('horas_extra');
+
+  // Filtrar por año si hay currentYearFilter
+  const filtered = currentYearFilter
+    ? all.filter(h => { const key = getPeriodoKey(h.fecha); return key && key.split('-')[0] === currentYearFilter; })
+    : all;
+
+  // Agrupar por periodo
+  const map = {};
+  filtered.forEach(h => {
+    const key = getPeriodoKey(h.fecha);
+    if (!key) return;
+    if (!map[key]) map[key] = [];
+    map[key].push(h);
+  });
+
+  const periodos = Object.keys(map).sort().reverse();
+
+  document.getElementById('totalPeriodosBadge').textContent =
+    periodos.length + ' período' + (periodos.length !== 1 ? 's' : '');
+
+  // Banner
+  updateBanner(filtered, currentYearFilter
+    ? 'Año ' + currentYearFilter + ' · ' + periodos.length + ' período' + (periodos.length !== 1 ? 's' : '')
+    : periodos.length + ' período' + (periodos.length !== 1 ? 's' : '') + ' · General');
+
+  const grid = document.getElementById('periodosGrid');
+
+  if (!periodos.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#999;">
+      <div style="font-size:3rem;margin-bottom:12px;">📭</div>
+      <div style="font-size:1.1rem;font-weight:700;color:#555;margin-bottom:6px;">Sin registros encontrados</div>
+      <div style="font-size:.85rem;">Importe un Excel o agregue registros con fecha.</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = periodos.map(key => {
+    const recs = map[key];
+    const s    = calcStats(recs);
+    const [y, m] = key.split('-').map(Number);
+    const endM = m === 12 ? 1 : m + 1;
+    const endY = m === 12 ? y + 1 : y;
+
+    return `<div class="periodo-card" onclick="showDetalle('${key}')">
+      <div class="periodo-card-header">
+        <div class="pc-icon">📅</div>
+        <div>
+          <div class="pc-title">21 de ${MESES_LARGO[m]} al 20 de ${MESES_LARGO[endM]}</div>
+          <div class="pc-sub">${MESES_LARGO[m]} ${y} — ${MESES_LARGO[endM]} ${endY}</div>
+        </div>
+      </div>
+      <div class="periodo-card-body">
+        <div class="pc-stat">
+          <div class="pc-stat-val">${formatNumber(s.total,1)}</div>
+          <div class="pc-stat-lbl">Total Horas</div>
+        </div>
+        <div class="pc-stat blue">
+          <div class="pc-stat-val">${s.trab}</div>
+          <div class="pc-stat-lbl">Trabajadores</div>
+        </div>
+        <div class="pc-stat green">
+          <div class="pc-stat-val">${formatNumber(s.lv,1)}</div>
+          <div class="pc-stat-lbl">Horas L/V</div>
+        </div>
+        <div class="pc-stat orange">
+          <div class="pc-stat-val">${formatNumber(s.sd,1)}</div>
+          <div class="pc-stat-lbl">S/D/F ×2</div>
+        </div>
+      </div>
+      <div class="periodo-card-footer">
+        <span class="pc-footer-badge">${s.count} registros</span>
+        <span class="pc-footer-arrow">Ver detalle →</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== VISTA 2: DETALLE =====
+function showDetalle(key) {
+  currentPeriodoKey = key;
+  currentPage = 1;
+  document.getElementById('viewYears').style.display    = 'none';
+  document.getElementById('viewPeriodos').style.display = 'none';
+  document.getElementById('viewDetalle').style.display  = '';
+  document.getElementById('detallePeriodoLabel').textContent = keyToLabel(key);
+
+  const all   = DB.get('horas_extra');
+  const recs  = all.filter(h => getPeriodoKey(h.fecha) === key);
+  const grupos = [...new Set(recs.map(h => h.grupo).filter(Boolean))].sort();
+  const sg = document.getElementById('filtGrupo');
+  sg.innerHTML = '<option value="">Todos</option>';
+  grupos.forEach(g => { const o = document.createElement('option'); o.value = g; o.textContent = g; sg.appendChild(o); });
+
+  document.getElementById('searchInput').value = '';
+  document.getElementById('filtTipo').value    = '';
+  renderTable();
+}
+
+function volverAPeriodos() {
+  currentPeriodoKey = null;
+  document.getElementById('viewDetalle').style.display  = 'none';
+  document.getElementById('viewYears').style.display    = 'none';
+  document.getElementById('viewPeriodos').style.display = '';
+  renderPeriodCards();
+}
+
+// ===== TABLA =====
+function getData() {
+  let d = DB.get('horas_extra');
+  if (currentPeriodoKey) d = d.filter(h => getPeriodoKey(h.fecha) === currentPeriodoKey);
+  const q  = document.getElementById('searchInput').value.trim().toLowerCase();
+  const fg = document.getElementById('filtGrupo').value;
+  const ft = document.getElementById('filtTipo').value;
+  if (q)  d = d.filter(h => (h.nombre||'').toLowerCase().includes(q) || (h.ci||'').toLowerCase().includes(q) || (h.grupo||'').toLowerCase().includes(q) || (h.trabajo||'').toLowerCase().includes(q));
+  if (fg) d = d.filter(h => h.grupo === fg);
+  if (ft) d = d.filter(h => h.tipo  === ft);
+  return d.sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+}
+
+function renderTable() {
+  const all = DB.get('horas_extra');
+  const periodRecs = currentPeriodoKey
+    ? all.filter(h => getPeriodoKey(h.fecha) === currentPeriodoKey)
+    : all;
+  updateBanner(periodRecs, currentPeriodoKey ? keyToLabelCorto(currentPeriodoKey) : 'General');
+
+  const data   = getData();
+  const total  = data.length;
+  const pages  = Math.max(1, Math.ceil(total / perPage));
+  if (currentPage > pages) currentPage = 1;
+  const slice  = data.slice((currentPage-1)*perPage, currentPage*perPage);
+  document.getElementById('countBadge').textContent = `${total} registros`;
+
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('tableBody').innerHTML = slice.length ? slice.map(h => {
+    const rc = recalcRec(h);
+    const vencido    = h.tipo==='C' && h.vencimiento && h.vencimiento < today;
+    const proxVencer = h.tipo==='C' && h.vencimiento && !vencido && daysDiff(today, h.vencimiento) <= 15;
+    return `<tr style="${vencido?'background:#fff0f0;':''}">
+      <td>${formatDate(h.fecha)}</td>
+      <td style="font-size:11px;white-space:nowrap;">${escHtml(h.ci||'—')}</td>
+      <td><strong style="font-size:13px;">${escHtml(h.nombre||'—')}</strong></td>
+      <td><span class="badge badge-secondary" style="font-size:10px;">${escHtml(h.grupo||'—')}</span></td>
+      <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(h.trabajo||'')}">${escHtml(h.trabajo||'—')}</td>
+      <td style="text-align:center;"><span class="badge ${h.tipo==='C'?'badge-warning':'badge-info'}">${escHtml(h.tipo||'—')}</span></td>
+      <td style="font-size:11px;">${escHtml(h.permanencia||'—')}</td>
+      <td style="text-align:center;font-weight:600;">${escHtml(h.horaSalida||'—')}</td>
+      <td style="text-align:center;font-weight:600;">${escHtml(h.horaExtra||'—')}</td>
+      <td style="text-align:center;">${formatNumber(rc.totalHoras,1)}</td>
+      <td style="text-align:center;color:#003580;font-weight:700;">${formatNumber(rc.lv,1)}</td>
+      <td style="text-align:center;color:#b85c00;font-weight:700;">${formatNumber(rc.sd,1)}</td>
+      <td style="text-align:center;color:#555;font-weight:700;">${formatNumber(rc.nocturno,1)}</td>
+      <td style="text-align:center;font-size:15px;font-weight:900;color:#8B1A1A;">${formatNumber(rc.totalFinal,1)}</td>
+      <td style="text-align:center;font-size:11px;">${h.tipo==='C'&&h.vencimiento
+        ? `<span style="color:${vencido?'#c00':proxVencer?'#c47b00':'#2a7a2a'};font-weight:700;">${formatDate(h.vencimiento)}${vencido?' ⚠️':proxVencer?' ⏳':''}</span>`
+        : '—'}</td>
+      <td><div class="table-actions">
+        <a href="form-horas-extra.html?id=${h.id}" class="btn btn-info btn-sm btn-icon" title="Editar">✏️</a>
+        <button class="btn btn-info btn-sm btn-icon" onclick="verReporte('${escHtml(h.ci||'')}','${escHtml(h.nombre||'')}')" title="Ver / Imprimir">👁️</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="doDelete(${h.id})" title="Eliminar">🗑️</button>
+      </div></td></tr>`;
+  }).join('') : `<tr><td colspan="16"><div class="empty-state"><div class="empty-icon">⏱️</div><div class="empty-title">Sin registros en este período</div><div class="empty-sub">Use "Nuevo Registro" para agregar</div></div></td></tr>`;
+
+  let tLV=0,tSD=0,tN=0,tF=0;
+  data.forEach(h=>{ const r=recalcRec(h); tLV+=r.lv; tSD+=r.sd; tN+=r.nocturno; tF+=r.totalFinal; });
+  document.getElementById('tableFooter').innerHTML = `<tr style="background:#f5f0f0;font-weight:700;border-top:2px solid #8B1A1A;">
+    <td colspan="10" style="text-align:right;padding:10px 14px;color:#555;">TOTALES FILTRADOS:</td>
+    <td style="text-align:center;color:#003580;">${formatNumber(tLV,1)}</td>
+    <td style="text-align:center;color:#b85c00;">${formatNumber(tSD,1)}</td>
+    <td style="text-align:center;color:#555;">${formatNumber(tN,1)}</td>
+    <td style="text-align:center;color:#8B1A1A;font-size:16px;">${formatNumber(tF,1)}</td>
+    <td colspan="2"></td></tr>`;
+
+  let pg = '';
+  if (pages > 1) {
+    if (currentPage > 1) pg += `<button class="page-btn" onclick="goPage(${currentPage-1})">‹</button>`;
+    for (let i = Math.max(1,currentPage-2); i <= Math.min(pages,currentPage+2); i++)
+      pg += `<button class="page-btn${i===currentPage?' active':''}" onclick="goPage(${i})">${i}</button>`;
+    if (currentPage < pages) pg += `<button class="page-btn" onclick="goPage(${currentPage+1})">›</button>`;
+  }
+  pg += `<span class="page-info">${(currentPage-1)*perPage+1}–${Math.min(currentPage*perPage,total)} de ${total}</span>`;
+  document.getElementById('paginationBar').innerHTML = pg;
+}
+function goPage(p) { currentPage = p; renderTable(); }
+
+/* DELETE REGISTRO */
+function doDelete(id) {
+  if (!confirm('¿Eliminar este registro de horas extra?\nEsta acción no se puede deshacer.')) return;
+  const before = DB.get('horas_extra');
+  const after  = before.filter(h => String(h.id) !== String(id) && h.__idx !== id);
+  if (after.length === before.length) {
+    const idx = before.findIndex(h => String(h.id) === String(id));
+    if (idx >= 0) { before.splice(idx,1); DB.set('horas_extra', before); }
+    else { toast('No se pudo encontrar el registro','error'); return; }
+  } else DB.set('horas_extra', after);
+  renderTable();
+  toast('Registro eliminado','success');
+}
+function limpiarTodo() {
+  const n = DB.get('horas_extra').length;
+  if (!n) { toast('No hay registros para eliminar','info'); return; }
+  if (!confirm('¿Eliminar TODOS los '+n+' registros?\n\nEsta acción no se puede deshacer.')) return;
+  DB.set('horas_extra', []);
+  volverAAnios();
+  toast('Todos los registros eliminados.','success');
+}
+
+/* REPORTE */
+function verReporte(ci, nombre) {
+  const allData = DB.get('horas_extra');
+  const recs  = allData.filter(h => h.ci === ci).sort((a,b) => a.fecha < b.fecha ? -1 : 1);
+  const recsR = recs.map(h => ({...h, ...recalcRec(h)}));
+  const tLV   = recsR.reduce((s,h) => s+h.lv, 0);
+  const tSD   = recsR.reduce((s,h) => s+h.sd, 0);
+  const tNoc  = recsR.reduce((s,h) => s+h.nocturno, 0);
+  const tF    = recsR.reduce((s,h) => s+h.totalFinal, 0);
+  document.getElementById('rptNombre').textContent = nombre || ci;
+  document.getElementById('rptSub').textContent    = `C.I.: ${ci}  ·  ${recs.length} registros  ·  Total acumulado: ${formatNumber(tF,2)} horas`;
+  const MNC = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  function fmtD(d){ if(!d)return'—'; const dt=new Date(d+'T00:00:00'); return dt.getDate().toString().padStart(2,'0')+'/'+MNC[dt.getMonth()]+'/'+dt.getFullYear(); }
+  function rowBg(h){ const td=new Date(); if(h.tipo==='C'&&h.vencimiento){const v=new Date(h.vencimiento+'T00:00:00');const diff=Math.ceil((v-td)/86400000);if(diff<0)return'#fff0f0';if(diff<=15)return'#fffbf0';}return''; }
+  function tipoDia(h){
+    const feriados=DB.get('feriados').map(f=>f.fecha);
+    const dow=new Date(h.fecha+'T12:00:00').getDay();
+    const esF=feriados.includes(h.fecha);
+    if(esF) return {lbl:'Feriado',col:'#8B1A1A'};
+    if(dow===0) return {lbl:'Domingo',col:'#b85c00'};
+    if(dow===6) return {lbl:'Sábado',col:'#b85c00'};
+    return {lbl:'L/V',col:'#003580'};
+  }
+  const rows = recsR.map((h,i) => {
+    const td=new Date(); let vStr='—';
+    if(h.tipo==='C'&&h.vencimiento){const v=new Date(h.vencimiento+'T00:00:00');const diff=Math.ceil((v-td)/86400000);vStr=diff<0?`<span style="color:#c00;font-weight:700">${fmtD(h.vencimiento)} ⚠️</span>`:diff<=15?`<span style="color:#c47b00;font-weight:700">${fmtD(h.vencimiento)} ⏳</span>`:`<span style="color:#2a7a2a">${fmtD(h.vencimiento)}</span>`;}
+    const td2=tipoDia(h);
+    const nocLbl=h.sd>0?'×3':'×1.5';
+    return `<tr style="background:${rowBg(h)}">
+      <td style="padding:5px 8px;font-size:.82rem;color:#666">${i+1}</td>
+      <td style="padding:5px 8px;font-size:.82rem">${fmtD(h.fecha)}<br><span style="font-size:.7rem;font-weight:700;color:${td2.col}">${td2.lbl}</span></td>
+      <td style="padding:5px 8px;font-size:.8rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(h.trabajo||'')}">${escHtml(h.trabajo||'—')}</td>
+      <td style="padding:5px 8px;text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:.75rem;font-weight:700;background:${h.tipo==='C'?'#e8f4fd':'#fff3e0'};color:${h.tipo==='C'?'#1565c0':'#e65100'}">${h.tipo==='C'?'COMP':'EXTRA'}</span></td>
+      <td style="padding:5px 8px;text-align:center;font-size:.82rem">${h.horaSalida||'—'}</td>
+      <td style="padding:5px 8px;text-align:center;font-size:.82rem">${h.horaExtra||'—'}</td>
+      <td style="padding:5px 8px;text-align:center;color:#003580;font-weight:700">${h.lv>0?formatNumber(h.lv,2):'<span style="color:#bbb">—</span>'}</td>
+      <td style="padding:5px 8px;text-align:center;color:#b85c00;font-weight:700">${h.sd>0?formatNumber(h.sd,2):'<span style="color:#bbb">—</span>'}</td>
+      <td style="padding:5px 8px;text-align:center;color:#555">${h.nocturno>0?`<span style="font-weight:700">${formatNumber(h.nocturno,2)}</span><br><span style="font-size:.7rem;color:#888">${nocLbl}</span>`:'<span style="color:#bbb">—</span>'}</td>
+      <td style="padding:5px 8px;text-align:center;font-weight:800;color:#8B1A1A">${formatNumber(h.totalFinal,2)}</td>
+      <td style="padding:5px 8px;text-align:center;font-size:.78rem">${vStr}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('rptBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+      <div style="background:#e8f0fe;border-radius:8px;padding:10px;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:#003580">${formatNumber(tLV,2)}</div><div style="font-size:.72rem;color:#555;text-transform:uppercase">Horas L/V ×1</div></div>
+      <div style="background:#fff3e0;border-radius:8px;padding:10px;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:#b85c00">${formatNumber(tSD,2)}</div><div style="font-size:.72rem;color:#555;text-transform:uppercase">Horas S/D/F ×2</div></div>
+      <div style="background:#f3e5f5;border-radius:8px;padding:10px;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:#6a1b9a">${formatNumber(tNoc,2)}</div><div style="font-size:.72rem;color:#555;text-transform:uppercase">Nocturnas (×1.5/×3)</div></div>
+      <div style="background:#fce4ec;border-radius:8px;padding:10px;text-align:center"><div style="font-size:1.3rem;font-weight:800;color:#8B1A1A">${formatNumber(tF,2)}</div><div style="font-size:.72rem;color:#555;text-transform:uppercase">Total Final</div></div>
+    </div>
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.85rem">
+      <thead><tr style="background:#8B1A1A;color:#fff">
+        <th style="padding:7px 8px;text-align:center">#</th><th style="padding:7px 8px">Fecha</th>
+        <th style="padding:7px 8px">Trabajo Realizado</th><th style="padding:7px 8px;text-align:center">Tipo</th>
+        <th style="padding:7px 8px;text-align:center">Hr. Ini</th><th style="padding:7px 8px;text-align:center">Hr. Fin</th>
+        <th style="padding:7px 8px;text-align:center">L/V</th><th style="padding:7px 8px;text-align:center">S/D/F</th>
+        <th style="padding:7px 8px;text-align:center">Noct.</th><th style="padding:7px 8px;text-align:center">Total</th>
+        <th style="padding:7px 8px;text-align:center">Vence</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr style="background:#f5f0f0;font-weight:700;border-top:2px solid #8B1A1A">
+        <td colspan="6" style="padding:8px;text-align:right;color:#555">TOTALES:</td>
+        <td style="padding:8px;text-align:center;color:#003580">${formatNumber(tLV,2)}</td>
+        <td style="padding:8px;text-align:center;color:#b85c00">${formatNumber(tSD,2)}</td>
+        <td style="padding:8px;text-align:center;color:#555">${formatNumber(tNoc,2)}</td>
+        <td style="padding:8px;text-align:center;color:#8B1A1A;font-size:1rem">${formatNumber(tF,2)}</td>
+        <td></td>
+      </tr></tfoot>
+    </table></div>`;
+  document.getElementById('modalReporte').style.display = 'flex';
+}
+function closeReporte() { document.getElementById('modalReporte').style.display='none'; }
+function printReporte() {
+  const ci   = document.getElementById('rptNombre').textContent;
+  const sub  = document.getElementById('rptSub').textContent;
+  const body = document.getElementById('rptBody').innerHTML;
+  const win  = window.open('','_blank','width=900,height=700');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reporte - ${escHtml(ci)}</title>
+    <style>body{font-family:Arial,sans-serif;padding:20px;color:#222}h2{color:#8B1A1A;margin:0 0 4px}p{margin:0 0 14px;color:#555;font-size:.88rem}table{width:100%;border-collapse:collapse;font-size:.82rem}th{background:#8B1A1A;color:#fff;padding:6px 8px}td{padding:5px 8px;border-bottom:1px solid #eee}@media print{button{display:none}}</style></head><body>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div><h2>${escHtml(ci)}</h2><p>${escHtml(sub)}</p></div>
+      <div style="text-align:right;font-size:.78rem;color:#888">EMAVÍAS La Paz<br>Generado: ${new Date().toLocaleDateString('es-BO',{day:'2-digit',month:'2-digit',year:'numeric'})}</div>
+    </div>${body}<script>setTimeout(()=>{window.print();window.close();},400);<\/script></body></html>`);
+  win.document.close();
+}
+
+/* EXPORT (botón principal — exporta según vista actual) */
+function doExport() {
+  const all  = DB.get('horas_extra');
+  let data, periodoLabel;
+  if (currentPeriodoKey) {
+    data = all.filter(h => getPeriodoKey(h.fecha) === currentPeriodoKey);
+    periodoLabel = keyToLabel(currentPeriodoKey);
+  } else if (currentYearFilter) {
+    data = all.filter(h => { const key = getPeriodoKey(h.fecha); return key && key.split('-')[0] === currentYearFilter; });
+    periodoLabel = 'Año ' + currentYearFilter;
+  } else {
+    data = all;
+    periodoLabel = 'Todos los períodos';
+  }
+  exportarExcel(data, periodoLabel, currentPeriodoKey || currentYearFilter || 'Todos');
+}
+
+/* Función interna de exportación Excel */
+function exportarExcel(data, periodoLabel, safeSuffix) {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('es-BO',{year:'numeric',month:'long',day:'numeric'});
+  const RED='8B1A1A',RED2='A52A2A',WHITE='FFFFFF';
+  function mkB(rgb){const b={style:'thin',color:{rgb:rgb||'CCBBBB'}};return{top:b,bottom:b,left:b,right:b};}
+  function C(v,s){return{v:(v==null?'':v),t:(typeof v==='number'?'n':'s'),s:s};}
+  const sTitle={fill:{patternType:'solid',fgColor:{rgb:RED}},font:{bold:true,color:{rgb:WHITE},name:'Arial',sz:14},alignment:{horizontal:'center',vertical:'center'}};
+  const sSub={fill:{patternType:'solid',fgColor:{rgb:RED2}},font:{color:{rgb:WHITE},name:'Arial',sz:9},alignment:{horizontal:'center',vertical:'center'}};
+  const sGap={fill:{patternType:'solid',fgColor:{rgb:'6B1414'}},font:{sz:4,color:{rgb:'6B1414'}}};
+  const sHead={fill:{patternType:'solid',fgColor:{rgb:RED}},font:{bold:true,color:{rgb:WHITE},name:'Arial',sz:10},alignment:{horizontal:'center',vertical:'center',wrapText:true},border:mkB('8B1A1A')};
+  const sEven={fill:{patternType:'solid',fgColor:{rgb:WHITE}},font:{name:'Arial',sz:10},border:mkB('E0CCCC')};
+  const sOdd={fill:{patternType:'solid',fgColor:{rgb:'FDF5F5'}},font:{name:'Arial',sz:10},border:mkB('E0CCCC')};
+  const sNum=(odd)=>({...(odd?sOdd:sEven),alignment:{horizontal:'right'}});
+  const sTotL={fill:{patternType:'solid',fgColor:{rgb:'F5EAEA'}},font:{bold:true,name:'Arial',sz:10},border:mkB('8B1A1A'),alignment:{horizontal:'left'}};
+  const sTotN={fill:{patternType:'solid',fgColor:{rgb:'F5EAEA'}},font:{bold:true,name:'Arial',sz:10},border:mkB('8B1A1A'),alignment:{horizontal:'right'}};
+  const HEADS=['Fecha','C.I.','Apellido y Nombre','Grupo','Trabajo Realizado','Tipo','Permanencia','Hr. Inicio','Hr. Fin','Total Hrs','L/V','S/D/F','Noct.','Total Final','Vencimiento','Período','Observaciones'];
+  const nc=HEADS.length;
+  const wsData=[];
+  wsData.push([C('EMAVIAS  —  EMPRESA MUNICIPAL DE ASFALTO Y VÍAS',sTitle),...Array(nc-1).fill(C('',sTitle))]);
+  wsData.push([C('SISTEMA DE GESTIÓN ADMINISTRATIVA   ·   HORAS EXTRA   ·   '+periodoLabel.toUpperCase()+'   ·   '+dateStr,sSub),...Array(nc-1).fill(C('',sSub))]);
+  wsData.push(Array(nc).fill(C('',sGap)));
+  wsData.push(HEADS.map(h=>C(h,sHead)));
+  let tLV=0,tSD=0,tNoc=0,tF=0;
+  data.forEach((h,ri)=>{
+    const odd=ri%2===1;
+    const vencido=h.tipo==='C'&&h.vencimiento?new Date(h.vencimiento)<now:false;
+    tLV+=Number(h.lv)||0;tSD+=Number(h.sd)||0;tNoc+=Number(h.nocturno)||0;tF+=Number(h.totalFinal)||0;
+    wsData.push([C(h.fecha||'',odd?sOdd:sEven),C(h.ci||'',odd?sOdd:sEven),C(h.nombre||'',odd?sOdd:sEven),C(h.grupo||'',odd?sOdd:sEven),C(h.trabajo||'',odd?sOdd:sEven),C(h.tipo||'',odd?sOdd:sEven),C(h.permanencia||'',odd?sOdd:sEven),C(h.horaSalida||'',odd?sOdd:sEven),C(h.horaExtra||'',odd?sOdd:sEven),C(Number(h.totalHoras)||0,sNum(odd)),C(Number(h.lv)||0,sNum(odd)),C(Number(h.sd)||0,sNum(odd)),C(Number(h.nocturno)||0,sNum(odd)),C(Number(h.totalFinal)||0,sNum(odd)),C(h.tipo==='C'&&h.vencimiento?h.vencimiento+(vencido?' ⚠️':''):'',odd?sOdd:sEven),C(getPeriodoKey(h.fecha)?keyToLabel(getPeriodoKey(h.fecha)):'',odd?sOdd:sEven),C(h.observaciones||'',odd?sOdd:sEven)]);
+  });
+  wsData.push([C('TOTALES',sTotL),...Array(8).fill(C('',sTotL)),C(null,sTotL),C(+tLV.toFixed(2),sTotN),C(+tSD.toFixed(2),sTotN),C(+tNoc.toFixed(2),sTotN),C(+tF.toFixed(2),sTotN),C('',sTotL),C('',sTotL),C('',sTotL)]);
+  const ws=XLSX.utils.aoa_to_sheet(wsData);
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:nc-1}},{s:{r:1,c:0},e:{r:1,c:nc-1}},{s:{r:2,c:0},e:{r:2,c:nc-1}}];
+  ws['!cols']=[{wch:12},{wch:14},{wch:32},{wch:20},{wch:32},{wch:6},{wch:12},{wch:10},{wch:10},{wch:10},{wch:7},{wch:7},{wch:7},{wch:11},{wch:13},{wch:30},{wch:20}];
+  ws['!rows']=[{hpt:28},{hpt:18},{hpt:5},{hpt:22}];
+  const sRS={fill:{patternType:'solid',fgColor:{rgb:RED}},font:{bold:true,color:{rgb:WHITE},name:'Arial',sz:12},alignment:{horizontal:'center',vertical:'center'}};
+  const sRH={fill:{patternType:'solid',fgColor:{rgb:'F5EAEA'}},font:{bold:true,name:'Arial',sz:10},border:mkB('CCBBBB')};
+  const sRV={fill:{patternType:'solid',fgColor:{rgb:WHITE}},font:{name:'Arial',sz:10},border:mkB('E0CCCC'),alignment:{horizontal:'right'}};
+  const wsR=XLSX.utils.aoa_to_sheet([[C('EMAVIAS — Resumen de Horas Extra',sRS),C('',sRS)],[C('Período',sRH),C(periodoLabel,sRV)],[C('Exportado',sRH),C(now.toLocaleString('es-BO'),sRV)],[C('Total registros',sRH),C(data.length,sRV)],[C('',{}),C('',{})],[C('Categoría',sRH),C('Horas',sRH)],[C('Horas L/V (×1 normal)',sRH),C(+tLV.toFixed(2),sRV)],[C('Horas S/D/F (×2 dobles)',sRH),C(+tSD.toFixed(2),sRV)],[C('Horas Nocturnas (×1.5)',sRH),C(+tNoc.toFixed(2),sRV)],[C('TOTAL FINAL EQUIVALENTE',sRH),C(+tF.toFixed(2),sRV)]]);
+  wsR['!merges']=[{s:{r:0,c:0},e:{r:0,c:1}}];wsR['!cols']=[{wch:30},{wch:20}];wsR['!rows']=[{hpt:24}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Horas Extra');
+  XLSX.utils.book_append_sheet(wb,wsR,'Resumen');
+  const safeN=String(safeSuffix||'Todos').replace(/[\/\\:\*\?"<>\|]/g,'-').slice(0,40);
+  XLSX.writeFile(wb,'HorasExtra_'+safeN+'_'+now.toISOString().slice(0,10)+'.xlsx');
+  toast('Excel exportado','success');
+}
+
+/* IMPORT */
+function triggerImport(){document.getElementById('fileImport').click();}
+function handleImport(inp){
+  if(!inp.files[0]) return;
+  const file=inp.files[0];inp.value='';
+  const isCsv=file.name.toLowerCase().endsWith('.csv');
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      let wb;
+      if(isCsv) wb=XLSX.read(e.target.result,{type:'string',cellDates:false});
+      else{const data=new Uint8Array(e.target.result);wb=XLSX.read(data,{type:'uint8array',cellDates:true});}
+      const sheetName=wb.SheetNames[0];const ws=wb.Sheets[sheetName];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+      if(!rows||rows.length<2){toast('El archivo está vacío o sin datos','error');return;}
+      function isDateObj(v){return v instanceof Date&&!isNaN(v);}
+      function serialToDate(n){const ms=(n-25569)*86400000;const d=new Date(ms);return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');}
+      function fmtDate(v){if(v===null||v===undefined||v==='')return'';if(isDateObj(v))return v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0');if(typeof v==='number'&&v>1)return serialToDate(v);const s=String(v).trim();if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);return m?m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'):'';}
+      function fmtTime(v){if(v===null||v===undefined||v==='')return'';if(isDateObj(v))return String(v.getUTCHours()).padStart(2,'0')+':'+String(v.getUTCMinutes()).padStart(2,'0');if(typeof v==='number'){const frac=v%1;const totalMin=Math.round(frac*24*60);return String(Math.floor(totalMin/60)%24).padStart(2,'0')+':'+String(totalMin%60).padStart(2,'0');}const s=String(v).trim();const m=s.match(/^(\d{1,2})[:\.](\d{2})/);return m?m[1].padStart(2,'0')+':'+m[2]:s;}
+      let headerIdx=-1;
+      for(let i=0;i<Math.min(rows.length,5);i++){const r=rows[i];if(r&&r.some(c=>String(c||'').toUpperCase().includes('FECHA')||String(c||'').toUpperCase().includes('C.I'))){headerIdx=i;break;}}
+      if(headerIdx<0){toast('No se encontró fila de encabezados (FECHA / C.I.)','error');return;}
+      const headers=rows[headerIdx].map(h=>String(h===null?'':h).toUpperCase().trim());
+      const iFecha=headers.findIndex(h=>h==='FECHA');const iCi=headers.findIndex(h=>h.includes('C.I'));
+      const iNombre=headers.findIndex(h=>h.includes('APELLIDO Y NOMBRE')||h.includes('NOMBRE'));
+      const iGrupo=headers.findIndex(h=>h==='GRUPO');const iTrabajo=headers.findIndex(h=>h.includes('TRABAJO'));
+      const iTipo=headers.findIndex(h=>h.includes('XTRA')||h==='TIPO');
+      const iPerm=headers.findIndex(h=>h.includes('PERMANENTE'));
+      const iSalida=headers.findIndex(h=>h.includes('SALIDA'));
+      const iExtra=headers.findIndex(h=>h.includes('HRA EXTRA')||h.includes('HRA FIN'));
+      const iLv=headers.findIndex(h=>h==='L/V');const iSd=headers.findIndex(h=>h==='S/D/F');const iNoc=headers.findIndex(h=>h==='NOCTURNO');
+      const iTotalF=headers.findIndex(h=>h==='TOTAL HORAS'||(h.includes('TOTAL')&&h.includes('HORA')&&!h.includes('MIN')));
+      const existing=DB.get('horas_extra');
+      const maxId=existing.length?Math.max(...existing.map(o=>Number(o.id)||0)):0;
+      const imported=[];
+      for(let i=headerIdx+1;i<rows.length;i++){
+        const r=rows[i];if(!r)continue;
+        const ciVal=iCi>=0?r[iCi]:null;if(!ciVal&&ciVal!==0)continue;
+        const fecha=fmtDate(iFecha>=0?r[iFecha]:'');if(!fecha)continue;
+        const lv=parseFloat(iLv>=0?r[iLv]:0)||0;const sd=parseFloat(iSd>=0?r[iSd]:0)||0;
+        const noc=parseFloat(iNoc>=0?r[iNoc]:0)||0;const totalFin=parseFloat(iTotalF>=0?r[iTotalF]:lv+sd+noc)||0;
+        imported.push({id:maxId+imported.length+1,fecha,ci:String(ciVal).trim(),nombre:String(iNombre>=0&&r[iNombre]!=null?r[iNombre]:'').trim(),grupo:String(iGrupo>=0&&r[iGrupo]!=null?r[iGrupo]:'').trim(),trabajo:String(iTrabajo>=0&&r[iTrabajo]!=null?r[iTrabajo]:'').trim(),tipo:String(iTipo>=0&&r[iTipo]!=null?r[iTipo]:'X').trim().toUpperCase()||'X',permanencia:String(iPerm>=0&&r[iPerm]!=null?r[iPerm]:'PERMANENTE').trim(),horaSalida:fmtTime(iSalida>=0?r[iSalida]:null),horaExtra:fmtTime(iExtra>=0?r[iExtra]:null),totalHoras:parseFloat(iTotalF>=0?r[iTotalF]:0)||0,lv,sd,nocturno:noc,totalFinal:totalFin,periodo:''});
+      }
+      if(!imported.length){toast('No se encontraron registros válidos. Verifique que el archivo tenga encabezados FECHA y C.I.','error');return;}
+      // Dedup: omitir registros que ya existan por fecha+CI
+      const existingKeys=new Set(existing.map(r=>r.fecha+'|'+r.ci));
+      const nuevos=imported.filter(r=>!existingKeys.has(r.fecha+'|'+r.ci));
+      const dupes=imported.length-nuevos.length;
+      DB.set('horas_extra',[...existing,...nuevos]);
+      const msg=nuevos.length+' registros agregados'+(dupes?' · '+dupes+' ya existían (omitidos)':'');
+      toast(msg,'success');
+      currentYearFilter = null;
+      currentPeriodoKey = null;
+      document.getElementById('viewDetalle').style.display  = 'none';
+      document.getElementById('viewPeriodos').style.display = 'none';
+      document.getElementById('viewYears').style.display    = '';
+      renderYearCards();
+    }catch(err){console.error('Import error:',err);toast('Error al leer el archivo: '+err.message,'error');}
+  };
+  if(isCsv) reader.readAsText(file,'UTF-8');
+  else reader.readAsArrayBuffer(file);
+}
+
+/* INIT */
+ensureIds();
+migrateData();
+renderYearCards();
+</script>
+</body>
+</html>
